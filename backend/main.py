@@ -21,3 +21,6 @@ def Saludo():
 
 
 
+@app.get("/despedida")
+def Despedida():
+    return{"despedida":"a chingar asu"}
