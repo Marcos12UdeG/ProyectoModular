@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import pandas as pd
 from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
 
 origins = "http://localhost:3000"
