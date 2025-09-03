@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link"; // 👈 Importar Link
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,11 +24,50 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
       >
-        {children}
+        {/* Navbar */}
+        <nav className="bg-white shadow-md fixed top-0 w-full z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16 items-center">
+              {/* Logo */}
+              <div className="text-xl font-bold text-indigo-600">Mi App</div>
+
+              {/* Links de navegación */}
+              <ul className="flex space-x-6 text-gray-700 font-medium">
+                <li>
+                  <Link
+                    href="/"
+                    className="hover:text-indigo-500 transition-colors"
+                  >
+                    Inicio
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/cuentos"
+                    className="hover:text-indigo-500 transition-colors"
+                  >
+                    Ejemplo
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/contacto"
+                    className="hover:text-indigo-500 transition-colors"
+                  >
+                    Contacto
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </nav>
+
+        {/* Contenido principal con padding para no tapar por navbar */}
+        <main className="pt-20 px-4">{children}</main>
       </body>
     </html>
   );
