@@ -15,15 +15,5 @@ app.add_middleware(
 
 )
 
-@app.get("/saludo")
-def Saludo():
-    return {"saludo":"Hola como estas"}
 
-@app.get("/adios")
-def Adios():
-    return {"despedida":"Hasta Pronto"}
-
-@app.get("/suma")
-def suma():
-    return {"suma": 1 + 3}
 
