@@ -22,3 +22,8 @@ def Saludo():
 @app.get("/adios")
 def Adios():
     return {"despedida":"Hasta Pronto"}
+
+@app.get("/suma")
+def suma():
+    return {"suma": 1 + 3}
+
