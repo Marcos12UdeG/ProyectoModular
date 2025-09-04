@@ -18,9 +18,3 @@ app.add_middleware(
 @app.get("/saludo")
 def Saludo():
     return {"saludo":"Hola como estas"}
-
-
-
-@app.get("/despedida")
-def Despedida():
-    return{"despedida":"a chingar asu"}
