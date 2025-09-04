@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+
 origins = "http://localhost:3000"
 
 app.add_middleware(
@@ -14,6 +15,8 @@ app.add_middleware(
     allow_headers = ["*"],
 
 )
+
+app.include_router(router)
 
 
 
