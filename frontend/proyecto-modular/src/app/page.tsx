@@ -4,11 +4,11 @@ export default function Home() {
     
   const [saludo,SetSaludo] = useState("")
 
-    const ObtenerSaludo = async () =>{
-      const res = await fetch("http://localhost:8000/saludo")
-      const data = await res.json()
-      SetSaludo(data.saludo);
-      console.log(data);
+    const ObtenerSaludo = async () => {
+      const respuesta = await fetch("http://localhost:8000/saludo")
+      const data = await respuesta.json()
+      SetSaludo(data.saludo)
+      console.log(data)
     }
 
     useEffect(() => {
@@ -18,8 +18,8 @@ export default function Home() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+        <div>{saludo ? saludo : "Cargando ..."}</div>
         {/* Título */}
-        <div>{saludo ? saludo : "Cargando"}</div>
         <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
           Iniciar Sesión
         </h1>
