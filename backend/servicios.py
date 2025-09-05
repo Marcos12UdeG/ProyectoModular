@@ -1,7 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, EmailStr
-
-from ProyectoModular.backend.database import SessionLocal
+from sqlalchemy.orm import Session
+from backend.database import SessionLocal
+from backend.models import Usuario
 
 class UsuarioCreate(BaseModel):
     name: str
@@ -25,4 +26,7 @@ def get_db():
     finally:
         db.close()
 
-    
+@router.get("/usuario",response_model=list[UsuarioRead])
+def ObtenerUsuario(db: Session = Depends(get_db)):
+    return db.query(Usuario).all()
+

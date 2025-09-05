@@ -10,9 +10,6 @@ Base = declarative_base()
 
 try:
     db = SessionLocal()
-    rows = db.execute(text("SELECT * FROM ejemplo"))
-    for row in rows:
-        print(row)
     print("✅ Conexión exitosa a la base de datos")
 except Exception as e:
     print("❌ Error de conexión:", e)
