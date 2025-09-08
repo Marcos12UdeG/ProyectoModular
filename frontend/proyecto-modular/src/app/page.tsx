@@ -29,7 +29,7 @@ export default function Home() {
       setMensaje(`✅ Bienvenido ${data.name}`);
 
       setTimeout(() => {
-        router.push("/cuentos");
+        router.push("/principal");
       }, 1000);
     } catch (error) {
       console.error("Error al conectar al servidor", error);
