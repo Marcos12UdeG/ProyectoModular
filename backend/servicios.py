@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.models import Usuario
+from backend.models import Tale, Usuario,level_num
 
 class UsuarioCreate(BaseModel):
     name: str
@@ -19,6 +19,19 @@ class UsuarioRead(BaseModel):
 class LoginRequest(BaseModel):
     email:EmailStr
     password:str
+
+class TaleCreate(BaseModel):
+    tale_name: str
+    content: str
+    level_type: level_num
+
+class TaleRead(BaseModel):
+    id_tale: int
+    tale_name: str
+    content: str
+    level_type: level_num
+
+    model_config = {"from_attributes": True}
 
 router = APIRouter()
 
@@ -63,3 +76,6 @@ def CrearUsuario(request: UsuarioCreate, db: Session = Depends(get_db)):
 
     return new_user
 
+@router.get("/tales",response_model=list[TaleRead])
+def ObtenerCuentos(db: Session = Depends(get_db)):
+    return db.query(Tale).all()
