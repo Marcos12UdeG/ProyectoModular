@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 // ✅ Interfaz de un cuento
 interface Tale {
@@ -30,16 +31,40 @@ export default function CuentosPage() {
   }, []);
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Cuentos</h1>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <h1 className="text-3xl font-bold text-center mb-10">📖 Cuentos</h1>
 
-      {/* Mapear todos los cuentos */}
-      <div className="flex flex-col gap-4">
+      {/* Grid responsivo */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {tales.map((tale) => (
-          <div key={tale.id_tale} className="p-4 border rounded shadow">
-            <h2 className="text-lg font-semibold">{tale.tale_name}</h2>
-            <p className="text-sm text-gray-700">{tale.content}</p>
-            <p className="text-xs text-gray-500">Nivel: {tale.level_type}</p>
+          <div
+            key={tale.id_tale}
+            className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all p-6 flex flex-col justify-between"
+          >
+            {/* Nombre del cuento */}
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">
+              {tale.tale_name}
+            </h2>
+
+            {/* Preview del contenido */}
+            <p className="text-sm text-gray-600 mb-4 line-clamp-3">
+              {tale.content}
+            </p>
+
+            {/* Nivel */}
+            <p className="text-xs text-gray-500 mb-4">
+              Nivel:{" "}
+              <span className="font-medium text-blue-600">
+                {tale.level_type}
+              </span>
+            </p>
+
+            {/* Botón para ver lecciones */}
+            <Link href={`/lecciones/${tale.id_tale}`}>
+              <button className="w-full bg-blue-500 text-white py-2 rounded-xl hover:bg-blue-600 transition-colors">
+                Ver lecciones
+              </button>
+            </Link>
           </div>
         ))}
       </div>

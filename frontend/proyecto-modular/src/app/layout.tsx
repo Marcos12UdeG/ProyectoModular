@@ -56,7 +56,7 @@ export default function RootLayout({
                 </li>
                 <li>
                   <Link
-                    href="/contacto"
+                    href="/traducir"
                     className="hover:text-[#A44C3B] transition-colors"
                   >
                     Contacto

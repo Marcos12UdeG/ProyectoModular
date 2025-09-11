@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Text, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Text, Enum as SQLEnum, ForeignKey
 from backend.database import Base
 from enum import Enum
+from sqlalchemy.orm import relationship
 
 class level_num(str, Enum):
     A1 = "A1"
@@ -27,4 +28,16 @@ class Tale(Base):
     content = Column(Text, nullable=False)
     level_type = Column(SQLEnum(level_num), nullable=False)
 
+    lessons = relationship("Lesson",back_populates="tale")
+
+class Lesson(Base):
+
+    __tablename__ = "lessons"
+
+    id_lesson = Column(Integer,primary_key=True,autoincrement=True)
+    title = Column(String(50),nullable=False)
+
+    id_tale = Column(Integer,ForeignKey("tale.id_tale"))
+
+    tale = relationship("Tale",back_populates="lessons")
 

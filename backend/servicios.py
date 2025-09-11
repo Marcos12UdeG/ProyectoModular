@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.models import Tale, Usuario,level_num
+from backend.models import Tale, Usuario,level_num,Lesson
+from googletrans import Translator
 
 class UsuarioCreate(BaseModel):
     name: str
@@ -33,7 +34,24 @@ class TaleRead(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class TraduccionesRequest(BaseModel):
+    text:str
+    target:str = "en"
+
+
+class LessonCreate(BaseModel):
+    id_tale:int
+    title: str
+
+class LessonRead(BaseModel):
+    id_lesson:int
+    title:str
+    id_tale: int
+
+    model_config = {"from_attributes": True}
+
 router = APIRouter()
+translator = Translator()
 
 def get_db():
     db = SessionLocal()
@@ -79,3 +97,37 @@ def CrearUsuario(request: UsuarioCreate, db: Session = Depends(get_db)):
 @router.get("/tales",response_model=list[TaleRead])
 def ObtenerCuentos(db: Session = Depends(get_db)):
     return db.query(Tale).all()
+
+@router.get("/lesson",response_model=list[LessonRead])
+def ObtenerLecciones(db: Session = Depends(get_db)):
+    return db.query(Lesson).all()
+
+
+@router.post("/lesson",response_model=LessonCreate)
+def CrearLeccion(request:LessonCreate,db: Session = Depends(get_db)):
+    tale = db.query(Tale).filter(Tale.id_tale == request.id_tale).first()
+    if not tale:
+        raise HTTPException(status_code=401,detail="Cuento no encontrado")
+    
+    new_lesson = Lesson(
+        title = request.title,
+        id_tale = request.id_tale
+    )
+
+    db.add(new_lesson)
+    db.commit()
+    db.refresh(new_lesson)
+
+    return new_lesson
+
+@router.post("/traducir")
+def traducirTexto(req:TraduccionesRequest):
+    try:
+        result = translator.translate(req.text,dest=req.target)
+        return {"traduccion":result.text}
+    except Exception as e:
+        return {"error",str(e)}
+
+
+
+
