@@ -38,28 +38,30 @@ export default function Home() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-[#FFF8F0] via-[#FDE2D3] to-[#F8CBA6]">
-      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-12 flex flex-col md:flex-row items-center gap-12">
-        {/* Logo */}
-        <div className="flex justify-center w-full md:w-1/2">
+    <div className="flex items-center justify-center min-h-screen bg-white px-4">
+      {/* Caja central */}
+      <div className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl p-10 flex flex-col md:flex-row items-center md:items-stretch gap-10">
+        
+        {/* Logo sin contorno */}
+        <div className="flex justify-center items-center w-full md:w-1/2">
           <Image
             src="/images/logo.jpg"
             alt="Storyteller Logo"
-            width={250}
-            height={250}
-            className="rounded-2xl shadow-md"
+            width={280}
+            height={280}
+            className="object-contain"
           />
         </div>
 
         {/* Formulario */}
-        <div className="w-full md:w-1/2">
-          <h1 className="text-4xl font-extrabold text-[#8B3E2F] mb-4 text-center md:text-left tracking-wide">
+        <div className="w-full md:w-1/2 flex flex-col justify-center">
+          <h1 className="text-4xl font-extrabold text-[#3E2723] mb-6 text-center md:text-left tracking-wide">
             STORYTELLER
           </h1>
 
           <form className="space-y-6" onSubmit={Login}>
             <div>
-              <label className="block text-sm font-semibold text-[#8B3E2F]">
+              <label className="block text-sm font-semibold text-[#4E342E]">
                 EMAIL
               </label>
               <input
@@ -67,13 +69,13 @@ export default function Home() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="hello@reallygreatsite.com"
-                className="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#8B3E2F] outline-none transition"
+                className="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#6D4C41] outline-none transition"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[#8B3E2F]">
+              <label className="block text-sm font-semibold text-[#4E342E]">
                 PASSWORD
               </label>
               <input
@@ -81,23 +83,23 @@ export default function Home() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="********"
-                className="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#8B3E2F] outline-none transition"
+                className="mt-2 w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#6D4C41] outline-none transition"
                 required
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-[#8B3E2F] text-white py-3 rounded-lg hover:bg-[#A44C3B] transition font-semibold text-lg shadow-md"
+              className="w-full bg-[#6D4C41] text-white py-3 rounded-lg hover:bg-[#4E342E] transition font-semibold text-lg shadow-md"
             >
               Sign In
             </button>
 
-            <p className="mt-6 text-center text-sm text-[#8B3E2F]">
+            <p className="mt-6 text-center text-sm text-[#3E2723]">
               Don&apos;t have an account?{" "}
               <span
                 onClick={() => router.push("/registro")}
-                className="text-[#A44C3B] hover:underline cursor-pointer transition font-medium"
+                className="text-[#6D4C41] hover:underline cursor-pointer transition font-medium"
               >
                 Sign Up
               </span>
@@ -105,7 +107,7 @@ export default function Home() {
           </form>
 
           {mensaje && (
-            <p className="mt-6 text-center text-sm font-semibold text-[#A44C3B]">
+            <p className="mt-6 text-center text-sm font-semibold text-[#4E342E]">
               {mensaje}
             </p>
           )}

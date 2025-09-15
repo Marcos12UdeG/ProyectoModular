@@ -27,7 +27,6 @@ class Tale(Base):
     tale_name = Column(String(50), nullable=False)
     content = Column(Text, nullable=False)
     level_type = Column(SQLEnum(level_num), nullable=False)
-
     lessons = relationship("Lesson",back_populates="tale")
 
 class Lesson(Base):

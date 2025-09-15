@@ -26,49 +26,42 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-[#FFF8F0] via-[#FDE2D3] to-[#F8CBA6]`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-[#D7CCC8] via-[#A1887F] to-[#5D4037]`}
       >
-        {/* Navbar */}
-        <nav className="bg-white/80 backdrop-blur-md shadow-md fixed top-0 w-full z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16 items-center">
-              <div className="text-xl font-extrabold text-[#8B3E2F]">
-                STORYTELLER
-              </div>
-
-              {/* Links de navegación */}
-              <ul className="flex space-x-6 text-[#8B3E2F] font-medium">
-                <li>
-                  <Link
-                    href="/principal"
-                    className="hover:text-[#A44C3B] transition-colors"
-                  >
-                    Inicio
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/cuentos"
-                    className="hover:text-[#A44C3B] transition-colors"
-                  >
-                    Ejemplo
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/traducir"
-                    className="hover:text-[#A44C3B] transition-colors"
-                  >
-                    Contacto
-                  </Link>
-                </li>
-              </ul>
+        {/* NAV */}
+        <nav className="backdrop-blur-md bg-[#d7ccc880]/80 fixed top-0 w-full z-50 shadow-md">
+          <div className="flex justify-between h-16 items-center px-6 max-w-6xl mx-auto">
+            
+            {/* Logo con degradado */}
+            <div className="text-2xl font-extrabold bg-gradient-to-r from-[#4E342E] to-[#8D6E63] bg-clip-text text-transparent">
+              STORYTELLER
             </div>
+
+            {/* Links */}
+            <ul className="flex space-x-8 text-[#3E2723] font-medium">
+              {[
+                { name: "Inicio", href: "/principal" },
+                { name: "Cuentos", href: "/cuentos" },
+                { name: "Ejercicios", href: "/ejercicios" },
+                { name: "Grupos", href: "/grupos" },
+              ].map((link) => (
+                <li key={link.name}>
+                  <Link
+                    href={link.href}
+                    className="relative hover:text-[#5D4037] transition duration-300 group"
+                  >
+                    {link.name}
+                    {/* Animación subrayado */}
+                    <span className="absolute left-0 -bottom-1 w-0 h-[2px] bg-[#5D4037] transition-all duration-300 group-hover:w-full"></span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
         </nav>
 
-        {/* Contenido principal con padding para no tapar por navbar */}
-        <main className="pt-20 px-4">{children}</main>
+        {/* CONTENIDO */}
+        <main className="pt-20">{children}</main>
       </body>
     </html>
   );

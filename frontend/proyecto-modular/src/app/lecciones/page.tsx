@@ -1,17 +1,17 @@
 "use client"
-import { useState, useEffect } from "react"
+
+import { useEffect, useState } from "react"
 
 interface Lesson {
-  id_tale: number
-  id_lesson: number
   title: string
+  id_tale: number
 }
 
-export default function LeccionesPage() {
+export default function LeecionPage() {
   const [lessons, setLessons] = useState<Lesson[]>([])
 
   const ObtenerLecciones = async () => {
-    const res = await fetch("http://localhost:8000/lesson") // ojo que sea plural
+    const res = await fetch("http://localhost:8000/lesson")
     const data = await res.json()
     setLessons(data)
   }
@@ -21,28 +21,25 @@ export default function LeccionesPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-2xl font-bold text-center mb-6">📚 Lecciones</h1>
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">📚 Lista de Lecciones</h1>
 
-      {lessons.length === 0 ? (
-        <p className="text-center text-gray-500">No hay lecciones disponibles</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lessons.map((l) => (
+      {lessons.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-5xl">
+          {lessons.map((lesson, index) => (
             <div
-              key={l.id_lesson}
-              className="bg-white p-4 rounded-2xl shadow-md hover:shadow-lg transition-shadow"
+              key={index}
+              className="bg-white rounded-2xl shadow-md p-5 hover:shadow-lg transition"
             >
-              <h2 className="text-lg font-semibold text-gray-800">{l.title}</h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Pertenece al cuento <span className="font-medium">#{l.id_tale}</span>
+              <h2 className="text-lg font-semibold text-gray-700">{lesson.title}</h2>
+              <p className="text-sm text-gray-500 mt-2">
+                Pertenece al cuento <span className="font-medium text-gray-700">{lesson.id_tale}</span>
               </p>
-              <button className="mt-4 w-full bg-blue-500 text-white py-2 rounded-xl hover:bg-blue-600 transition-colors">
-                Ver detalles
-              </button>
             </div>
           ))}
         </div>
+      ) : (
+        <p className="text-gray-500 text-lg animate-pulse">Cargando...</p>
       )}
     </div>
   )
