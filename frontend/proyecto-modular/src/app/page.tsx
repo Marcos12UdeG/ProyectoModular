@@ -2,8 +2,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useUser } from "../app/context/UserContext";
 
 export default function Home() {
+
+  const { setUser } = useUser();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
@@ -27,6 +30,8 @@ export default function Home() {
 
       const data = await res.json();
       setMensaje(`✅ Bienvenido ${data.name}`);
+
+      setUser(data);
 
       setTimeout(() => {
         router.push("/principal");

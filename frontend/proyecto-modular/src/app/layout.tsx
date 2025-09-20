@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { UserProvider } from "./context/UserContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-[#D7CCC8] via-[#A1887F] to-[#5D4037]`}
       >
+        <UserProvider>
         {/* NAV */}
         <nav className="backdrop-blur-md bg-[#d7ccc880]/80 fixed top-0 w-full z-50 shadow-md">
           <div className="flex justify-between h-16 items-center px-6 max-w-6xl mx-auto">
@@ -62,6 +64,7 @@ export default function RootLayout({
 
         {/* CONTENIDO */}
         <main className="pt-20">{children}</main>
+        </UserProvider>
       </body>
     </html>
   );
