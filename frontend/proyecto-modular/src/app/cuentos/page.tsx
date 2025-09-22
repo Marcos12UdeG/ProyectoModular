@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Volume2, Pause, Play } from "lucide-react";
+import { Volume2, Pause, Play, Trash2 } from "lucide-react";
 
 interface Tale {
   id_tale: number;
@@ -72,6 +72,21 @@ export default function CuentosPage() {
         synth.resume();
         setIsSpeaking(true);
       }
+    }
+  };
+
+  const EliminarCuento = async (id_tale: number) => {
+    try {
+      const res = await fetch(`http://localhost:8000/taleseliminate/${id_tale}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Error al eliminar el cuento");
+
+      // Actualizar la lista de cuentos en el frontend
+      setTales((prevTales) => prevTales.filter((tale) => tale.id_tale !== id_tale));
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -238,6 +253,17 @@ export default function CuentosPage() {
                     Ver lecciones
                   </Link>
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`¿Eliminar el cuento "${tale.tale_name}"?`)) {
+                        EliminarCuento(tale.id_tale);
+                      }
+                    }}
+                    className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center"
+                  >
+                    <Trash2 size={20} />
+                  </button>
                   <button
                     onClick={() =>
                       isSpeaking && synth?.speaking

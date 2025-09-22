@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+import os
+import shutil
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
@@ -83,7 +85,7 @@ def get_db():
     finally:
         db.close()
 
-
+UPLOAD_DIR = "frontend/proyecto-modular/public/images"
 # ---------------- Endpoints ----------------
 
 # Usuarios
@@ -106,13 +108,58 @@ def crear_usuario(request: UsuarioCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
+# ------------------------------------------------------------------------------------------
 
-# Cuentos y lecciones
+# Cuentos
 @router.get("/tales", response_model=list[TaleRead])
 def obtener_cuentos(db: Session = Depends(get_db)):
     return db.query(Tale).all()
 
+@router.post("/talescreate", response_model=TaleRead)
+def crear_cuento(
+    tale_name: str = Form(...),
+    content: str = Form(...),
+    level_type: str = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    # Guardar imagen en /public/images/nombre_del_cuento.jpg
+    filename = tale_name.replace(" ", "_").lower() + ".jpg"
+    file_path = os.path.join(UPLOAD_DIR, filename)
 
+    # Crear carpeta si no existe
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Guardar en base de datos
+    new_tale = Tale(
+        tale_name=tale_name,
+        content=content,
+        level_type=level_type
+    )
+    db.add(new_tale)
+    db.commit()
+    db.refresh(new_tale)
+
+    return new_tale
+
+@router.delete("/taleseliminate/{id_tale}")
+def Eliminar_Cuento(id_tale: int, db: Session = Depends(get_db)):
+    cuento = db.query(Tale).filter(Tale.id_tale == id_tale).first()
+    if not cuento:
+        raise HTTPException(status_code=404, detail="Lección no encontrada")
+
+    db.delete(cuento)
+    db.commit()
+
+    return {"message": "Lección eliminada correctamente"}
+
+
+# ------------------------------------------------------------------------------------------
+
+#Lecciones
 @router.get("/lesson", response_model=list[LessonRead])
 def obtener_lecciones(db: Session = Depends(get_db)):
     return db.query(Lesson).all()
@@ -128,7 +175,7 @@ def crear_leccion(request: LessonCreate, db: Session = Depends(get_db)):
     db.refresh(new_lesson)
     return new_lesson
 
-
+# ------------------------------------------------------------------------------------------
 
 # Traducción
 @router.post("/traducir")
@@ -136,6 +183,7 @@ def traducir(request: TraducirRead):
     traduccion = translator.translate(request.texto, dest=request.destino)
     return {"texto_original": request.texto, "traduccion": traduccion.text}
 
+# ------------------------------------------------------------------------------------------
 
 # Paginación de lecciones por cuento
 @router.get("/tales/{tale_id}/lessons", response_model=list[LessonRead])
@@ -144,6 +192,10 @@ def get_lessons_by_tale(tale_id: int, db: Session = Depends(get_db)):
     if not tale:
         raise HTTPException(status_code=404, detail="Cuento no encontrado")
     return jsonable_encoder(tale.lessons)
+
+# ------------------------------------------------------------------------------------------
+
+#Ejercicios
 
 @router.get("/lessons/{lesson_id}/exercises_with_answers", response_model=list[ExcerciseWithAnswersRead])
 def obtener_ejercicios_con_respuestas(lesson_id: int, db: Session = Depends(get_db)):
@@ -166,6 +218,8 @@ def obtener_ejercicios_con_respuestas(lesson_id: int, db: Session = Depends(get_
         })
 
     return ejercicios_con_respuestas
+
+# ------------------------------------------------------------------------------------------
 
 @router.post("/logout/{session_id}")
 def logout(session_id: int, db: Session = Depends(get_db)):
@@ -221,3 +275,5 @@ def verificar_usuario(request: LoginRequest, db: Session = Depends(get_db)):
         email=user.email,
         id_session=new_session.id_session
     )
+
+# ------------------------------------------------------------------------------------------

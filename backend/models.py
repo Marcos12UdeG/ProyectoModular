@@ -18,6 +18,10 @@ class excercise_type(str, Enum):
     writting = "writting"
     reading = "reading"
 
+class Role(str,Enum):
+    administrador = "administrador"
+    usuario = "usuario"
+
 # Modelo Usuario
 class Usuario(Base):
     __tablename__ = "user"
@@ -28,7 +32,7 @@ class Usuario(Base):
     email = Column(String(100), unique=True, nullable=False)
     last_login = Column(TIMESTAMP(timezone=True), nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
-
+    role = Column(SQLEnum(Role), nullable=True)
     sessions = relationship("UserSessionHistory", back_populates="user")
 
 # Modelo Tale
