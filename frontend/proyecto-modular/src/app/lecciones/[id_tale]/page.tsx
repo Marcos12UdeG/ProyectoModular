@@ -8,6 +8,7 @@ interface Lesson {
   title: string;
 }
 
+
 export default function LessonsByTale() {
   const { id_tale } = useParams();
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function LessonsByTale() {
 
     fetchLessons();
   }, [id_tale]);
+
 
   const handleExerciseClick = (lessonId: number) => {
     router.push(`/ejercicios/${lessonId}`);

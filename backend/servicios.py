@@ -129,6 +129,7 @@ def crear_leccion(request: LessonCreate, db: Session = Depends(get_db)):
     return new_lesson
 
 
+
 # Traducción
 @router.post("/traducir")
 def traducir(request: TraducirRead):
