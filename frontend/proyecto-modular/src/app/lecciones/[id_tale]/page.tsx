@@ -11,6 +11,7 @@ interface Lesson {
 
 export default function LessonsByTale() {
   const { id_tale } = useParams();
+  const {tale_name} = useParams();
   const router = useRouter();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -44,7 +45,7 @@ export default function LessonsByTale() {
   return (
     <div className="min-h-screen w-full flex flex-col items-center p-6">
       <h1 className="text-4xl font-extrabold text-[#3E2723] mt-6 mb-8 text-center tracking-wide">
-        📚 Lecciones del cuento {id_tale}
+        📚 Lecciones del cuento {tale_name}
       </h1>
 
       {loading ? (
