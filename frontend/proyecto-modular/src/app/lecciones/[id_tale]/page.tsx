@@ -45,7 +45,7 @@ export default function LessonsByTale() {
   return (
     <div className="min-h-screen w-full flex flex-col items-center p-6">
       <h1 className="text-4xl font-extrabold text-[#3E2723] mt-6 mb-8 text-center tracking-wide">
-        📚 Lecciones del cuento {tale_name}
+        📚 Lecciones del cuento {id_tale}
       </h1>
 
       {loading ? (
@@ -60,7 +60,6 @@ export default function LessonsByTale() {
               className="bg-white/95 rounded-3xl shadow-2xl hover:shadow-[0_12px_40px_rgba(0,0,0,0.2)] transition-all p-6 flex flex-col justify-between"
             >
               <h2 className="text-2xl font-bold text-[#4E342E] mb-4">{lesson.title}</h2>
-
               <p className="text-sm text-gray-700 mb-6 line-clamp-2">
                 Esta lección contiene ejercicios interactivos para reforzar lo aprendido.
               </p>

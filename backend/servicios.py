@@ -1,11 +1,12 @@
 import os
 import shutil
+from typing import List
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.models import Answer, Excercise, Tale, UserSessionHistory, Usuario, level_num, Lesson
+from backend.models import Answer, Excercise, Tale, UserAnswer, UserSessionHistory, Usuario, level_num, Lesson
 from googletrans import Translator
 from datetime import datetime, timezone
 
@@ -72,6 +73,24 @@ class ExcerciseWithAnswersRead(BaseModel):
     class Config:
         orm_mode = True
 
+class ExcerciseCreate(BaseModel):
+    excercise_name:str
+    question:str
+    excercise_type: level_num
+    id_lesson:int
+
+class SubmitExerciseAnswer(BaseModel):
+    id_excercise: int
+    id_answer: int
+
+class SubmitExercise(BaseModel):
+    id_user: int
+    answers: List[SubmitExerciseAnswer]
+
+class TalesWithLesson(BaseModel):
+    id_tale:int
+    tale_name:str
+    lessons: List[LessonRead]
 # ---------------- Router ----------------
 router = APIRouter()
 translator = Translator()
@@ -156,7 +175,17 @@ def Eliminar_Cuento(id_tale: int, db: Session = Depends(get_db)):
 
     return {"message": "Lección eliminada correctamente"}
 
-
+@router.get("/taleswithlessons", response_model=list[TalesWithLesson])
+def obtener_cuentos_con_lecciones(db: Session = Depends(get_db)):
+    tales = db.query(Tale).all()
+    result = []
+    for tale in tales:
+        result.append({
+            "id_tale": tale.id_tale,
+            "tale_name": tale.tale_name,
+            "lessons": tale.lessons  # relación uno a muchos en tu modelo
+        })
+    return result
 # ------------------------------------------------------------------------------------------
 
 #Lecciones
@@ -219,6 +248,21 @@ def obtener_ejercicios_con_respuestas(lesson_id: int, db: Session = Depends(get_
 
     return ejercicios_con_respuestas
 
+@router.post("/ejercicios/${id_lesson}")
+def agregar_ejercicio(request: ExcerciseCreate,db: Session = Depends(get_db)):
+    excercise = db.query(Lesson).filter(Lesson.id_lesson == request.id_lesson).first()
+
+    if not excercise:
+        raise HTTPException(status_code=404, detail="No se encontraron lecciones")
+
+    new_ejercicio = Excercise (
+        excercise_name = request.excercise_name,
+        question = request.question,
+        excercise_type = request.excercise_type,
+        id_lesson = request.id_lesson
+    )
+
+
 # ------------------------------------------------------------------------------------------
 
 @router.post("/logout/{session_id}")
@@ -277,3 +321,25 @@ def verificar_usuario(request: LoginRequest, db: Session = Depends(get_db)):
     )
 
 # ------------------------------------------------------------------------------------------
+
+#Respuestas Usuario
+
+@router.post("/submit-exercise")
+def submit_exercise(request: SubmitExercise, db: Session = Depends(get_db)):
+    """
+    Guarda las respuestas de un usuario para múltiples ejercicios.
+    """
+    if not request.answers:
+        raise HTTPException(status_code=400, detail="No se enviaron respuestas")
+
+    for ans in request.answers:
+        user_answer = UserAnswer(
+            id_user=request.id_user,
+            id_excercise=ans.id_excercise,
+            id_answer=ans.id_answer,
+        )
+        db.add(user_answer)
+
+    db.commit()
+    return {"status": "ok", "message": "Respuestas guardadas correctamente"}
+    

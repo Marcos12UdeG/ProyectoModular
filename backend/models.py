@@ -34,6 +34,7 @@ class Usuario(Base):
     created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
     role = Column(SQLEnum(Role), nullable=True)
     sessions = relationship("UserSessionHistory", back_populates="user")
+    user = relationship("UserAnswer", back_populates="users")
 
 # Modelo Tale
 class Tale(Base):
@@ -54,7 +55,6 @@ class Lesson(Base):
     id_lesson = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(50), nullable=False)
     id_tale = Column(Integer, ForeignKey("tale.id_tale"))
-
     # Relaciones
     tale = relationship("Tale", back_populates="lessons")
     excercises = relationship("Excercise", back_populates="lesson", cascade="all, delete-orphan")
@@ -72,6 +72,7 @@ class Excercise(Base):
     answers = relationship("Answer",back_populates = "excercises")
     # Relaciones
     lesson = relationship("Lesson", back_populates="excercises")
+    excercises = relationship("UserAnswer", back_populates="excercise")
 
 class Answer(Base):
 
@@ -83,6 +84,7 @@ class Answer(Base):
     id_excercise = Column(Integer,ForeignKey("excercises.id_excercise"))
 
     excercises = relationship("Excercise",back_populates="answers")
+    answers = relationship("UserAnswer",back_populates="answer")
 
 class UserSessionHistory(Base):
     __tablename__ = "user_session_history"
@@ -94,3 +96,15 @@ class UserSessionHistory(Base):
     duration_seconds = Column(Integer, nullable=True)
 
     user = relationship("Usuario", back_populates="sessions")
+
+class UserAnswer(Base):
+    __tablename__ = "user_answer"
+
+    id_answer_user = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id_user = Column(Integer, ForeignKey("user.id_user", ondelete="CASCADE"), nullable=False)
+    id_excercise = Column(Integer, ForeignKey("excercises.id_excercise", ondelete="CASCADE"), nullable=False)
+    id_answer = Column(Integer, ForeignKey("answer.id_answer", ondelete="CASCADE"), nullable=False)
+
+    users = relationship("Usuario",back_populates="user")
+    excercise = relationship("Excercise",back_populates="excercises")
+    answer = relationship("Answer",back_populates="answers")

@@ -42,6 +42,7 @@ export default function UserMenu() {
       {open && (
         <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg p-4 flex flex-col gap-3 origin-top-right">
           <div className="flex flex-col items-center gap-1 border-b pb-2">
+            <p>{user.id_user}</p>
             <p className="font-semibold">{user.name}</p>
             <p className="text-sm text-gray-500">{user.email}</p>
           </div>

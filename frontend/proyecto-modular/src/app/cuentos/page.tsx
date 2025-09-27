@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Volume2, Pause, Play, Trash2 } from "lucide-react";
+import { Pause, Play, Trash2 } from "lucide-react";
 
 interface Tale {
   id_tale: number;
@@ -22,6 +22,8 @@ export default function CuentosPage() {
   const [content, setContent] = useState("");
   const [levelType, setLevelType] = useState("");
   const [image, setImage] = useState<File | null>(null);
+
+  const niveles = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
   useEffect(() => {
     if (typeof window !== "undefined") setSynth(window.speechSynthesis);
@@ -80,10 +82,7 @@ export default function CuentosPage() {
       const res = await fetch(`http://localhost:8000/taleseliminate/${id_tale}`, {
         method: "DELETE",
       });
-
       if (!res.ok) throw new Error("Error al eliminar el cuento");
-
-      // Actualizar la lista de cuentos en el frontend
       setTales((prevTales) => prevTales.filter((tale) => tale.id_tale !== id_tale));
     } catch (error) {
       console.error(error);
@@ -107,7 +106,6 @@ export default function CuentosPage() {
         method: "POST",
         body: formData,
       });
-
       if (!res.ok) throw new Error("Error al guardar cuento");
 
       await fetchTales();
@@ -125,16 +123,94 @@ export default function CuentosPage() {
     <div className="min-h-screen w-full flex flex-col items-center">
       {/* Título centrado con botón a la derecha */}
       <div className="flex justify-between items-center w-full max-w-7xl px-4 mt-6 mb-8">
-          <h1 className="text-4xl font-extrabold text-[#3E2723] text-center flex-1">
-            📖 CUENTOS
-          </h1>
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-6 py-3 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition ml-4"
-          >
-            ➕ Agregar Cuento
-          </button>
+        <h1 className="text-4xl font-extrabold text-[#3E2723] text-center flex-1">
+          📖 CUENTOS
+        </h1>
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-6 py-3 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition ml-4"
+        >
+          ➕ Agregar Cuento
+        </button>
       </div>
+
+      {/* Secciones por Nivel */}
+      {niveles.map((nivel) => {
+        const cuentosPorNivel = tales.filter((tale) => tale.level_type === nivel);
+        if (cuentosPorNivel.length === 0) return null;
+
+        return (
+          <div key={nivel} className="w-full max-w-7xl px-4 mb-16">
+            <h2 className="text-3xl font-bold mb-6 text-[#5D4037]">Nivel {nivel}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {cuentosPorNivel.map((tale) => {
+                const imageUrl = `/images/${tale.tale_name
+                  .replace(/\s+/g, "_")
+                  .toLowerCase()}.jpg`;
+
+                return (
+                  <div
+                    key={tale.id_tale}
+                    className="bg-white/95 rounded-3xl shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all p-6 flex flex-col justify-between"
+                  >
+                    <img
+                      src={imageUrl}
+                      alt={tale.tale_name}
+                      className="w-full h-48 object-cover rounded-2xl mb-4 shadow-md"
+                    />
+
+                    <h2 className="text-2xl font-bold text-[#4E342E] mb-2">
+                      {tale.tale_name}
+                    </h2>
+
+                    <p className="text-sm text-gray-700 mb-4 line-clamp-3">
+                      {tale.content}
+                    </p>
+
+                    <p className="text-xs font-medium text-[#6D4C41] mb-4">
+                      Nivel:{" "}
+                      <span className="text-[#3E2723] font-semibold">
+                        {tale.level_type}
+                      </span>
+                    </p>
+
+                    <div className="flex gap-3 items-center">
+                      <Link
+                        href={`/lecciones/${tale.id_tale}`}
+                        className="flex-1 text-center py-2 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition"
+                      >
+                        Ver lecciones
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (confirm(`¿Eliminar el cuento "${tale.tale_name}"?`)) {
+                            EliminarCuento(tale.id_tale);
+                          }
+                        }}
+                        className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                      <button
+                        onClick={() =>
+                          isSpeaking && synth?.speaking
+                            ? PausarReanudar()
+                            : TraducirYLeer(tale.content)
+                        }
+                        className="p-2 bg-[#FFB74D] rounded-full hover:bg-[#FFA726] transition"
+                      >
+                        {isSpeaking ? <Pause size={20} /> : <Play size={20} />}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
 
       {/* Modal */}
       {showModal && (
@@ -157,13 +233,18 @@ export default function CuentosPage() {
               onChange={(e) => setContent(e.target.value)}
               className="w-full mb-4 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6D4C41] h-28 resize-none"
             />
-            <input
-              type="text"
-              placeholder="Nivel (ej: fácil, intermedio)"
+            <select
               value={levelType}
               onChange={(e) => setLevelType(e.target.value)}
               className="w-full mb-4 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6D4C41]"
-            />
+            >
+              <option value="">Selecciona un nivel</option>
+              {niveles.map((nivel) => (
+                <option key={nivel} value={nivel}>
+                  {nivel}
+                </option>
+              ))}
+            </select>
 
             {/* Input de archivo con vista previa */}
             <div className="mb-6">
@@ -211,74 +292,6 @@ export default function CuentosPage() {
           </div>
         </div>
       )}
-
-      {/* Grid de cuentos */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-7xl px-4 pb-10">
-        {tales.map((tale) => {
-          const imageUrl = `/images/${tale.tale_name
-            .replace(/\s+/g, "_")
-            .toLowerCase()}.jpg`;
-
-          return (
-            <div
-              key={tale.id_tale}
-              className="bg-white/95 rounded-3xl shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all p-6 flex flex-col justify-between"
-            >
-              <img
-                src={imageUrl}
-                alt={tale.tale_name}
-                className="w-full h-48 object-cover rounded-2xl mb-4 shadow-md"
-              />
-
-              <h2 className="text-2xl font-bold text-[#4E342E] mb-2">
-                {tale.tale_name}
-              </h2>
-
-              <p className="text-sm text-gray-700 mb-4 line-clamp-3">
-                {tale.content}
-              </p>
-
-              <p className="text-xs font-medium text-[#6D4C41] mb-4">
-                Nivel:{" "}
-                <span className="text-[#3E2723] font-semibold">
-                  {tale.level_type}
-                </span>
-              </p>
-
-              <div className="flex gap-3 items-center">
-                  <Link
-                    href={`/lecciones/${tale.id_tale}`}
-                    className="flex-1 text-center py-2 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition"
-                  >
-                    Ver lecciones
-                  </Link>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (confirm(`¿Eliminar el cuento "${tale.tale_name}"?`)) {
-                        EliminarCuento(tale.id_tale);
-                      }
-                    }}
-                    className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                  <button
-                    onClick={() =>
-                      isSpeaking && synth?.speaking
-                        ? PausarReanudar()
-                        : TraducirYLeer(tale.content)
-                    }
-                    className="p-2 bg-[#FFB74D] rounded-full hover:bg-[#FFA726] transition"
-                  >
-                    {isSpeaking ? <Pause size={20} /> : <Play size={20} />}
-                  </button>
-                </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
