@@ -1,8 +1,10 @@
-import React from "react";
+"use client"
+import React, { useState, useEffect } from "react";
 import { BookOpen, Users, BookMarked } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import UserMenu from "../usermenu/menu";
+import { useUser } from "../context/UserContext";
 
 export default function PrincipalPage() {
   const sections = [
@@ -26,6 +28,29 @@ export default function PrincipalPage() {
     },
   ];
 
+  const { user } = useUser();
+  const [userLevel, setUserLevel] = useState<string | null>(null);
+
+  // Obtener nivel del usuario desde el endpoint
+  useEffect(() => {
+    const fetchUserLevel = async () => {
+      if (!user?.id_user) return;
+
+      try {
+        const res = await fetch(`http://localhost:8000/user/${user.id_user}/level`);
+        if (!res.ok) throw new Error("Error al obtener el nivel");
+
+        const data = await res.json();
+        setUserLevel(data.predicted_level);
+      } catch (err) {
+        console.error("Error fetching user level:", err);
+        setUserLevel("No disponible");
+      }
+    };
+
+    fetchUserLevel();
+  }, [user]);
+
   return (
     <div className="min-h-screen w-full flex flex-col items-center bg-white px-4">
       {/* Header */}
@@ -44,6 +69,14 @@ export default function PrincipalPage() {
         </h1>
       </header>
 
+      {/* Nivel de usuario */}
+      <p className="text-lg mb-6">
+        Tu nivel de inglés actual es:{" "}
+        <span className="font-bold text-[#6D4C41]">
+          {userLevel ?? "Cargando..."}
+        </span>
+      </p>
+
       {/* Subtítulo */}
       <section className="text-center max-w-2xl mb-12">
         <h2 className="text-2xl md:text-3xl font-semibold text-[#4E342E] mb-3">
@@ -60,9 +93,7 @@ export default function PrincipalPage() {
           <Link key={index} href={section.link} passHref>
             <div className="cursor-pointer bg-[#6D4C41] text-white p-8 rounded-3xl shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:scale-105 transition-all flex flex-col items-center text-center">
               {section.icon}
-              <h3 className="text-xl font-bold mb-2 uppercase">
-                {section.title}
-              </h3>
+              <h3 className="text-xl font-bold mb-2 uppercase">{section.title}</h3>
               <p className="text-sm md:text-base leading-snug">{section.text}</p>
             </div>
           </Link>
@@ -74,7 +105,7 @@ export default function PrincipalPage() {
         <span>✔️ 50+ Lecciones</span>
         <span>📖 15 Historias</span>
         <span>👥 200 Estudiantes</span>
-        <UserMenu></UserMenu>
+        <UserMenu />
       </div>
     </div>
   );

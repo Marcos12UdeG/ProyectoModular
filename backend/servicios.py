@@ -1,11 +1,15 @@
 import os
 import shutil
 from typing import List
+from xml.parsers.expat import model
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.encoders import jsonable_encoder
+import joblib
+import pandas as pd
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
+from backend.modelo_predictivo import generate_features
 from backend.models import Answer, Excercise, Tale, UserAnswer, UserSessionHistory, Usuario, level_num, Lesson
 from googletrans import Translator
 from datetime import datetime, timezone
@@ -105,6 +109,8 @@ def get_db():
         db.close()
 
 UPLOAD_DIR = "frontend/proyecto-modular/public/images"
+model = joblib.load("user_level_model.pkl")
+
 # ---------------- Endpoints ----------------
 
 # Usuarios
@@ -126,6 +132,26 @@ def crear_usuario(request: UsuarioCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return new_user
+
+@router.get("/user/{id_user}/level")
+def get_user_level(id_user: int):
+    # Cargar CSV con todas las respuestas
+    df = pd.read_csv("user_responses.csv")
+    
+    # Filtrar solo las respuestas del usuario
+    df_user = df[df['id_user'] == id_user]
+    
+    if df_user.empty:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado o sin respuestas")
+    
+    # Generar features y predecir nivel
+    X_user = generate_features(df_user)
+    predicted_level = model.predict(X_user)
+    
+    return {
+        "id_user": id_user,
+        "predicted_level": predicted_level[0]  # como es un array de 1 elemento
+    }
 
 # ------------------------------------------------------------------------------------------
 
@@ -226,12 +252,12 @@ def get_lessons_by_tale(tale_id: int, db: Session = Depends(get_db)):
 
 #Ejercicios
 
-@router.get("/lessons/{lesson_id}/exercises_with_answers", response_model=list[ExcerciseWithAnswersRead])
-def obtener_ejercicios_con_respuestas(lesson_id: int, db: Session = Depends(get_db)):
+@router.get("/lessons/{id_lesson}/exercises_with_answers", response_model=list[ExcerciseWithAnswersRead])
+def obtener_ejercicios_con_respuestas(id_lesson: int, db: Session = Depends(get_db)):
     """
     Devuelve todos los ejercicios de una lección junto con sus respuestas.
     """
-    ejercicios = db.query(Excercise).filter(Excercise.id_lesson == lesson_id).all()
+    ejercicios = db.query(Excercise).filter(Excercise.id_lesson == id_lesson).all()
     if not ejercicios:
         raise HTTPException(status_code=404, detail="No se encontraron ejercicios para esta lección")
 
@@ -247,20 +273,6 @@ def obtener_ejercicios_con_respuestas(lesson_id: int, db: Session = Depends(get_
         })
 
     return ejercicios_con_respuestas
-
-@router.post("/ejercicios/${id_lesson}")
-def agregar_ejercicio(request: ExcerciseCreate,db: Session = Depends(get_db)):
-    excercise = db.query(Lesson).filter(Lesson.id_lesson == request.id_lesson).first()
-
-    if not excercise:
-        raise HTTPException(status_code=404, detail="No se encontraron lecciones")
-
-    new_ejercicio = Excercise (
-        excercise_name = request.excercise_name,
-        question = request.question,
-        excercise_type = request.excercise_type,
-        id_lesson = request.id_lesson
-    )
 
 
 # ------------------------------------------------------------------------------------------
