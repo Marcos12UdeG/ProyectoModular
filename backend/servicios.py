@@ -199,6 +199,33 @@ def Eliminar_Cuento(id_tale: int, db: Session = Depends(get_db)):
 
     return {"message": "Lección eliminada correctamente"}
 
+@router.get("/tales/{id_tale}/excercises",response_model=list[ExcerciseWithAnswersRead])
+def ObtenerTales_Con_Ejercicios(id_tale:int, db:Session = Depends(get_db)):
+    tales_ejercicios = db.query(Excercise).filter(Excercise.id_tale == id_tale).all()
+
+    if not tales_ejercicios:
+        raise HTTPException(status_code=404, detail="Cuento no encontrado")
+    
+    tales_with_ejercicios = []
+
+    for tal in tales_ejercicios:
+        respuestas = db.query(Answer).filter(Answer.id_excercise == tal.id_excercise).all()
+        tales_with_ejercicios.append({
+            "id_excercise": tal.id_excercise,
+            "excercise_name":tal.excercise_name,
+            "question":tal.question,
+            "excercise_type":tal.excercise_type,
+            "answers":respuestas
+        }   
+        )
+    return tales_with_ejercicios
+
+@router.get("/tales/{id_tale}", response_model=TaleRead)
+def obtener_cuento_por_id(id_tale: int, db: Session = Depends(get_db)):
+    cuento = db.query(Tale).filter(Tale.id_tale == id_tale).first()
+    if not cuento:
+        raise HTTPException(status_code=404, detail="Cuento no encontrado")
+    return cuento
 # ------------------------------------------------------------------------------------------
 
 # Traducción
@@ -221,7 +248,7 @@ def get_lessons_by_tale(tale_id: int, db: Session = Depends(get_db)):
 
 #Ejercicios
 
-@router.get("/lessons/{id_lesson}/exercises_with_answers", response_model=list[ExcerciseWithAnswersRead])
+@router.get("/tales/{id_tale}/exercises_with_answers", response_model=list[ExcerciseWithAnswersRead])
 def obtener_ejercicios_con_respuestas(id_lesson: int, db: Session = Depends(get_db)):
     """
     Devuelve todos los ejercicios de una lección junto con sus respuestas.
