@@ -201,24 +201,6 @@ def Eliminar_Cuento(id_tale: int, db: Session = Depends(get_db)):
 
 # ------------------------------------------------------------------------------------------
 
-#Lecciones
-@router.get("/lesson", response_model=list[LessonRead])
-def obtener_lecciones(db: Session = Depends(get_db)):
-    return db.query(Lesson).all()
-
-
-@router.post("/lesson", response_model=LessonRead)
-def crear_leccion(request: LessonCreate, db: Session = Depends(get_db)):
-    if not db.query(Tale).filter(Tale.id_tale == request.id_tale).first():
-        raise HTTPException(status_code=401, detail="Cuento no encontrado")
-    new_lesson = Lesson(title=request.title, id_tale=request.id_tale)
-    db.add(new_lesson)
-    db.commit()
-    db.refresh(new_lesson)
-    return new_lesson
-
-# ------------------------------------------------------------------------------------------
-
 # Traducción
 @router.post("/traducir")
 def traducir(request: TraducirRead):
