@@ -33,8 +33,11 @@ class Usuario(Base):
     last_login = Column(TIMESTAMP(timezone=True), nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
     role = Column(SQLEnum(Role), nullable=True)
+
+    # relaciones
     sessions = relationship("UserSessionHistory", back_populates="user")
-    user = relationship("UserAnswer", back_populates="users")
+    user_answers = relationship("UserAnswer", back_populates="user")
+
 
 # Modelo Tale
 class Tale(Base):
@@ -45,19 +48,8 @@ class Tale(Base):
     content = Column(Text, nullable=False)
     level_type = Column(SQLEnum(level_num), nullable=False)
 
-    # Relación con Lesson
-    lessons = relationship("Lesson", back_populates="tale", cascade="all, delete-orphan")
+    excercises = relationship("Excercise", back_populates="tale")
 
-# Modelo Lesson
-class Lesson(Base):
-    __tablename__ = "lessons"
-
-    id_lesson = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String(50), nullable=False)
-    id_tale = Column(Integer, ForeignKey("tale.id_tale"))
-    # Relaciones
-    tale = relationship("Tale", back_populates="lessons")
-    excercises = relationship("Excercise", back_populates="lesson", cascade="all, delete-orphan")
 
 # Modelo Excercise
 class Excercise(Base):
@@ -67,25 +59,27 @@ class Excercise(Base):
     excercise_name = Column(String(100), nullable=False)
     question = Column(Text, nullable=False)
     excercise_type = Column(SQLEnum(excercise_type), nullable=False)
-    id_lesson = Column(Integer, ForeignKey("lessons.id_lesson"))
+    id_tale = Column(Integer, ForeignKey("tale.id_tale"))
 
-    answers = relationship("Answer",back_populates = "excercises")
-    # Relaciones
-    lesson = relationship("Lesson", back_populates="excercises")
-    excercises = relationship("UserAnswer", back_populates="excercise")
+    answers = relationship("Answer", back_populates="excercise")
+    tale = relationship("Tale", back_populates="excercises")
+    user_answers = relationship("UserAnswer", back_populates="excercise")
 
+
+# Modelo Answer
 class Answer(Base):
-
     __tablename__ = "answer"
 
-    id_answer = Column(Integer,primary_key = True, autoincrement=True)
-    answer_text = Column(String(50),nullable = False)
-    is_correct = Column(Boolean,nullable = False)
-    id_excercise = Column(Integer,ForeignKey("excercises.id_excercise"))
+    id_answer = Column(Integer, primary_key=True, autoincrement=True)
+    answer_text = Column(String(50), nullable=False)
+    is_correct = Column(Boolean, nullable=False)
+    id_excercise = Column(Integer, ForeignKey("excercises.id_excercise"))
 
-    excercises = relationship("Excercise",back_populates="answers")
-    answers = relationship("UserAnswer",back_populates="answer")
+    excercise = relationship("Excercise", back_populates="answers")
+    user_answers = relationship("UserAnswer", back_populates="answer")
 
+
+# Modelo UserSessionHistory
 class UserSessionHistory(Base):
     __tablename__ = "user_session_history"
 
@@ -97,6 +91,8 @@ class UserSessionHistory(Base):
 
     user = relationship("Usuario", back_populates="sessions")
 
+
+# Modelo UserAnswer
 class UserAnswer(Base):
     __tablename__ = "user_answer"
 
@@ -105,6 +101,6 @@ class UserAnswer(Base):
     id_excercise = Column(Integer, ForeignKey("excercises.id_excercise", ondelete="CASCADE"), nullable=False)
     id_answer = Column(Integer, ForeignKey("answer.id_answer", ondelete="CASCADE"), nullable=False)
 
-    users = relationship("Usuario",back_populates="user")
-    excercise = relationship("Excercise",back_populates="excercises")
-    answer = relationship("Answer",back_populates="answers")
+    user = relationship("Usuario", back_populates="user_answers")
+    excercise = relationship("Excercise", back_populates="user_answers")
+    answer = relationship("Answer", back_populates="user_answers")

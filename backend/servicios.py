@@ -10,7 +10,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
 from backend.modelo_predictivo import generate_features
-from backend.models import Answer, Excercise, Tale, UserAnswer, UserSessionHistory, Usuario, level_num, Lesson
+from backend.models import Answer, Excercise, Tale, UserAnswer, UserSessionHistory, Usuario, level_num
 from googletrans import Translator
 from datetime import datetime, timezone
 
@@ -77,12 +77,6 @@ class ExcerciseWithAnswersRead(BaseModel):
     class Config:
         orm_mode = True
 
-class ExcerciseCreate(BaseModel):
-    excercise_name:str
-    question:str
-    excercise_type: level_num
-    id_lesson:int
-
 class SubmitExerciseAnswer(BaseModel):
     id_excercise: int
     id_answer: int
@@ -91,10 +85,14 @@ class SubmitExercise(BaseModel):
     id_user: int
     answers: List[SubmitExerciseAnswer]
 
-class TalesWithLesson(BaseModel):
-    id_tale:int
-    tale_name:str
-    lessons: List[LessonRead]
+
+class TalesWithExcercises(BaseModel):
+    id_tale: int
+    tale_name: str
+    content: str
+    level_type: level_num
+    excercises: list[ExcerciseWithAnswersRead]
+
 # ---------------- Router ----------------
 router = APIRouter()
 translator = Translator()
@@ -201,17 +199,6 @@ def Eliminar_Cuento(id_tale: int, db: Session = Depends(get_db)):
 
     return {"message": "Lección eliminada correctamente"}
 
-@router.get("/taleswithlessons", response_model=list[TalesWithLesson])
-def obtener_cuentos_con_lecciones(db: Session = Depends(get_db)):
-    tales = db.query(Tale).all()
-    result = []
-    for tale in tales:
-        result.append({
-            "id_tale": tale.id_tale,
-            "tale_name": tale.tale_name,
-            "lessons": tale.lessons  # relación uno a muchos en tu modelo
-        })
-    return result
 # ------------------------------------------------------------------------------------------
 
 #Lecciones

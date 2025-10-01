@@ -153,19 +153,15 @@ export default function CuentosPage() {
                     key={tale.id_tale}
                     className="bg-white/95 rounded-3xl shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all p-6 flex flex-col justify-between"
                   >
+                    <h2 className="text-2xl font-bold text-[#4E342E] mb-2">
+                      {tale.tale_name}
+                    </h2>
+                    
                     <img
                       src={imageUrl}
                       alt={tale.tale_name}
                       className="w-full h-48 object-cover rounded-2xl mb-4 shadow-md"
                     />
-
-                    <h2 className="text-2xl font-bold text-[#4E342E] mb-2">
-                      {tale.tale_name}
-                    </h2>
-
-                    <p className="text-sm text-gray-700 mb-4 line-clamp-3">
-                      {tale.content}
-                    </p>
 
                     <p className="text-xs font-medium text-[#6D4C41] mb-4">
                       Nivel:{" "}
@@ -176,10 +172,10 @@ export default function CuentosPage() {
 
                     <div className="flex gap-3 items-center">
                       <Link
-                        href={`/lecciones/${tale.id_tale}`}
+                        href={`/ejercicios/${tale.id_tale}`}
                         className="flex-1 text-center py-2 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition"
                       >
-                        Ver lecciones
+                        Ver Ejercicios
                       </Link>
 
                       <button
@@ -192,16 +188,6 @@ export default function CuentosPage() {
                         className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center"
                       >
                         <Trash2 size={20} />
-                      </button>
-                      <button
-                        onClick={() =>
-                          isSpeaking && synth?.speaking
-                            ? PausarReanudar()
-                            : TraducirYLeer(tale.content)
-                        }
-                        className="p-2 bg-[#FFB74D] rounded-full hover:bg-[#FFA726] transition"
-                      >
-                        {isSpeaking ? <Pause size={20} /> : <Play size={20} />}
                       </button>
                     </div>
                   </div>
