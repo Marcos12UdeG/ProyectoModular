@@ -1,0 +1,59 @@
+[
+  {
+    "level": "A1",
+    "topics": [
+      {
+        "letter": "A",
+        "words": [
+          {
+            "text": "apple",
+            "image": "/img/apple.png",
+            "translation": "manzana"
+          },
+          {
+            "text": "ant",
+            "image": "/img/ant.png",
+            "translation": "hormiga"
+          },
+          {
+            "text": "angry",
+            "image": "/img/angry.png",
+            "translation": "enojado"
+          },
+          {
+            "text": "animals",
+            "image": "/img/animals.png",
+            "translation": "animales"
+          }
+        ]
+      },
+      {
+        "letter": "B",
+        "words": [
+          {
+            "text": "boy",
+            "image": "/img/boy.png",
+            "translation": "niño"
+          },
+          {
+            "text": "bird",
+            "image": "/img/bird.png",
+            "translation": "pájaro"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "level": "A2",
+    "topics": [
+      {
+        "letter": "C",
+        "words": [
+          { "text": "cat", "image": "/img/cat.png", "translation": "gato" },
+          { "text": "carrot", "image": "/img/carrot.png", "translation": "zanahoria" }
+        ]
+      }
+    ]
+  }
+]
