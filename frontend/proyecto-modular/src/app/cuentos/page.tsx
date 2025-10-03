@@ -163,6 +163,9 @@ export default function CuentosPage() {
                       className="w-full h-48 object-cover rounded-2xl mb-4 shadow-md"
                     />
 
+                    <p className="text-sm text-gray-700 mb-4 line-clamp-3">
+                      {tale.content}
+                    </p>
                     <p className="text-xs font-medium text-[#6D4C41] mb-4">
                       Nivel:{" "}
                       <span className="text-[#3E2723] font-semibold">

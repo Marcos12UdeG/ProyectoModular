@@ -104,3 +104,27 @@ class UserAnswer(Base):
     user = relationship("Usuario", back_populates="user_answers")
     excercise = relationship("Excercise", back_populates="user_answers")
     answer = relationship("Answer", back_populates="user_answers")
+
+class Quiz(Base):
+    __tablename__ = "quiz"
+
+    id_quiz = Column(Integer,primary_key=True,autoincrement=True)
+    quiz_name = Column(String(30),nullable=False)
+    question = Column(Text,nullable= False)
+    quiz_level = Column(SQLEnum(level_num),nullable= False)
+
+    answers_quiz = relationship("Answer_Quiz", back_populates="answers")
+
+class Answer_Quiz(Base):
+    __tablename__ = "answer_quiz"
+
+    id_answer_quiz = Column(Integer,primary_key=True,autoincrement=True)
+    answer_text = Column(Text,nullable=False)
+    is_correct = Column(Boolean, nullable=False)
+    id_quiz = Column(Integer,ForeignKey("quiz.id_quiz"), nullable=False)
+
+    answers = relationship("Quiz",back_populates="answers_quiz")
+
+
+
+    

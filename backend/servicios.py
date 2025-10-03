@@ -9,8 +9,7 @@ import pandas as pd
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.modelo_predictivo import generate_features
-from backend.models import Answer, Excercise, Tale, UserAnswer, UserSessionHistory, Usuario, level_num
+from backend.models import Answer, Answer_Quiz, Excercise, Quiz, Tale, UserAnswer, UserSessionHistory, Usuario, level_num
 from googletrans import Translator
 from datetime import datetime, timezone
 
@@ -93,6 +92,21 @@ class TalesWithExcercises(BaseModel):
     level_type: level_num
     excercises: list[ExcerciseWithAnswersRead]
 
+class Answer_Quiz_Read(BaseModel):
+    id_answer_quiz:int
+    answer_text:str
+    is_correct:bool
+
+class QuizWithExcercise(BaseModel):
+    id_quiz:int
+    question:str
+    quiz_level: level_num
+    answers: list[Answer_Quiz_Read]
+
+    class Config:
+        orm_mode = True
+
+
 # ---------------- Router ----------------
 router = APIRouter()
 translator = Translator()
@@ -130,26 +144,6 @@ def crear_usuario(request: UsuarioCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return new_user
-
-@router.get("/user/{id_user}/level")
-def get_user_level(id_user: int):
-    # Cargar CSV con todas las respuestas
-    df = pd.read_csv("user_responses.csv")
-    
-    # Filtrar solo las respuestas del usuario
-    df_user = df[df['id_user'] == id_user]
-    
-    if df_user.empty:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado o sin respuestas")
-    
-    # Generar features y predecir nivel
-    X_user = generate_features(df_user)
-    predicted_level = model.predict(X_user)
-    
-    return {
-        "id_user": id_user,
-        "predicted_level": predicted_level[0]  # como es un array de 1 elemento
-    }
 
 # ------------------------------------------------------------------------------------------
 
@@ -351,3 +345,39 @@ def submit_exercise(request: SubmitExercise, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "ok", "message": "Respuestas guardadas correctamente"}
     
+
+
+@router.get("/quiz/{id_quiz}/answer")
+def obtener_quiz(id_quiz: int, db: Session = Depends(get_db)):
+
+    quiz = db.query(Quiz).filter(Quiz.id_quiz == id_quiz).first()
+    if not quiz:
+        return {"error": "Quiz no encontrado"}
+    
+
+    answers = db.query(Answer_Quiz).filter(Answer_Quiz.id_quiz == id_quiz).all()
+
+    quiz_con_respuestas = {
+        "id_quiz": quiz.id_quiz,
+        "quiz_name": quiz.quiz_name,
+        "question": quiz.question,
+        "quiz_level": quiz.quiz_level,
+        "answers": [
+            {
+                "id_answer_quiz": a.id_answer_quiz,
+                "answer_text": a.answer_text,
+                "is_correct": a.is_correct
+            }
+            for a in answers
+        ]
+    }
+
+    return quiz_con_respuestas
+
+
+@router.get("/quizes")
+def ObtenerQuizes(db:Session = Depends(get_db)):
+    quizes = db.query(Quiz).all()
+
+    return quizes
+
