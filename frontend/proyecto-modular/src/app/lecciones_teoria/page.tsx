@@ -1,30 +1,54 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import WordCard from "../components/WordCard";
 
-const levels = [
-  { name: "A1", color: "from-blue-400 to-blue-600" },
-  { name: "A2", color: "from-green-400 to-green-600" },
-  { name: "B1", color: "from-yellow-400 to-yellow-600" },
-  { name: "B2", color: "from-purple-400 to-purple-600" },
-  { name: "C1", color: "from-pink-400 to-pink-600" },
-  { name: "C2", color: "from-indigo-400 to-indigo-600" },
-];
+interface Word {
+  text: string;
+  image: string;
+  translation: string;
+}
 
-export default function LessonsPage() {
+interface Topic {
+  letter: string;
+  words: Word[];
+}
+
+interface LevelData {
+  level: string;
+  topics: Topic[];
+}
+
+export default function NivelPage() {
+  const params = useParams();
+  const { level } = params;
+  const [data, setData] = useState<LevelData | null>(null);
+
+  useEffect(() => {
+    fetch("/data.json")
+      .then((res) => res.json())
+      .then((allLevels: LevelData[]) => {
+        const found = allLevels.find((l) => l.level === level);
+        setData(found || null);
+      });
+  }, [level]);
+
+  if (!data) return <div className="p-6">Loading {level}...</div>;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-        {levels.map((level) => (
-          <Link
-            key={level.name}
-            href={`/lessons/${level.name}`}
-            className={`flex items-center justify-center h-40 w-40 rounded-2xl shadow-lg text-xl font-bold text-white bg-gradient-to-br ${level.color} transform hover:scale-105 transition-transform`}
-          >
-            {level.name}
-          </Link>
-        ))}
-      </div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <h1 className="text-3xl font-bold mb-6">Nivel {data.level}</h1>
+      {data.topics.map((topic) => (
+        <div key={topic.letter} className="mb-10">
+          <h2 className="text-2xl font-semibold mb-4">Letra {topic.letter}</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {topic.words.map((word, index) => (
+              <WordCard key={index} word={word} />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

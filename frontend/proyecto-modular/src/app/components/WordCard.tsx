@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Play, Pause } from "lucide-react";
+import { useState } from "react";
+import { Volume2, Languages } from "lucide-react";
 
 interface Word {
   text: string;
@@ -10,34 +10,48 @@ interface Word {
 }
 
 export default function WordCard({ word }: { word: Word }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const [showTranslation, setShowTranslation] = useState(false);
 
-  if (typeof window !== "undefined" && !synthRef.current) {
-    synthRef.current = window.speechSynthesis;
-  }
-
-  const speak = () => {
-    if (!synthRef.current) return;
-    const utter = new SpeechSynthesisUtterance(word.text);
-    utter.lang = "en-US";
-    utter.onend = () => setIsPlaying(false);
-    synthRef.current.speak(utter);
-    setIsPlaying(true);
+  const handleSpeak = () => {
+    const utterance = new SpeechSynthesisUtterance(word.text);
+    utterance.lang = "en-US";
+    speechSynthesis.speak(utterance);
   };
 
   return (
-    <div className="bg-white rounded-xl shadow p-4 flex flex-col items-center text-center">
-      <img src={word.image} alt={word.text} className="h-20 w-20 object-contain mb-2" />
-      <p className="font-semibold">{word.text}</p>
-      <p className="text-gray-500 italic text-sm">{word.translation}</p>
-      <button
-        onClick={speak}
-        className="mt-2 flex items-center gap-1 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-      >
-        {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-        <span className="text-sm">Play</span>
-      </button>
+    <div className="bg-white rounded-2xl shadow-md p-4 flex flex-col items-center transition-all hover:scale-105 hover:shadow-lg">
+      <img
+        src={word.image}
+        alt={word.text}
+        className="w-24 h-24 object-contain mb-3"
+      />
+      <h3 className="text-xl font-semibold text-gray-800 capitalize mb-2">
+        {word.text}
+      </h3>
+
+      {showTranslation && (
+        <p className="text-gray-600 text-sm mb-2 italic">
+          {word.translation}
+        </p>
+      )}
+
+      <div className="flex gap-3">
+        <button
+          onClick={handleSpeak}
+          className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition"
+          title="Reproducir pronunciación"
+        >
+          <Volume2 size={18} />
+        </button>
+
+        <button
+          onClick={() => setShowTranslation(!showTranslation)}
+          className="p-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition"
+          title="Mostrar traducción"
+        >
+          <Languages size={18} />
+        </button>
+      </div>
     </div>
   );
 }
