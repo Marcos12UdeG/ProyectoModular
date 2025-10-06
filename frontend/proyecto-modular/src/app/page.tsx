@@ -34,7 +34,7 @@ export default function Home() {
       setUser(data);
 
       setTimeout(() => {
-        router.push("/principal");
+        router.push("/quiz");
       }, 1000);
     } catch (error) {
       console.error("Error al conectar al servidor", error);

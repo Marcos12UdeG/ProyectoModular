@@ -4,7 +4,9 @@ from backend.database import Base
 from enum import Enum
 from sqlalchemy.orm import relationship
 
-# Enumeraciones
+# ==========================================================
+# ENUMERACIONES
+# ==========================================================
 class level_num(str, Enum):
     A1 = "A1"
     A2 = "A2"
@@ -18,11 +20,14 @@ class excercise_type(str, Enum):
     writting = "writting"
     reading = "reading"
 
-class Role(str,Enum):
+class Role(str, Enum):
     administrador = "administrador"
     usuario = "usuario"
 
-# Modelo Usuario
+
+# ==========================================================
+# MODELO USUARIO
+# ==========================================================
 class Usuario(Base):
     __tablename__ = "user"
 
@@ -33,13 +38,17 @@ class Usuario(Base):
     last_login = Column(TIMESTAMP(timezone=True), nullable=True)
     created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
     role = Column(SQLEnum(Role), nullable=True)
-
-    # relaciones
+    assigned_level = Column(SQLEnum(level_num), nullable=True)
+    
+    # Relaciones
     sessions = relationship("UserSessionHistory", back_populates="user")
     user_answers = relationship("UserAnswer", back_populates="user")
+    user_answers_quiz = relationship("UserAnswer_Quiz", back_populates="user_quiz")
 
 
-# Modelo Tale
+# ==========================================================
+# MODELO TALE
+# ==========================================================
 class Tale(Base):
     __tablename__ = "tale"
 
@@ -51,7 +60,9 @@ class Tale(Base):
     excercises = relationship("Excercise", back_populates="tale")
 
 
-# Modelo Excercise
+# ==========================================================
+# MODELO EXCERCISE
+# ==========================================================
 class Excercise(Base):
     __tablename__ = "excercises"
 
@@ -66,7 +77,9 @@ class Excercise(Base):
     user_answers = relationship("UserAnswer", back_populates="excercise")
 
 
-# Modelo Answer
+# ==========================================================
+# MODELO ANSWER
+# ==========================================================
 class Answer(Base):
     __tablename__ = "answer"
 
@@ -79,7 +92,9 @@ class Answer(Base):
     user_answers = relationship("UserAnswer", back_populates="answer")
 
 
-# Modelo UserSessionHistory
+# ==========================================================
+# MODELO USER SESSION HISTORY
+# ==========================================================
 class UserSessionHistory(Base):
     __tablename__ = "user_session_history"
 
@@ -92,7 +107,9 @@ class UserSessionHistory(Base):
     user = relationship("Usuario", back_populates="sessions")
 
 
-# Modelo UserAnswer
+# ==========================================================
+# MODELO USER ANSWER (para ejercicios)
+# ==========================================================
 class UserAnswer(Base):
     __tablename__ = "user_answer"
 
@@ -104,3 +121,49 @@ class UserAnswer(Base):
     user = relationship("Usuario", back_populates="user_answers")
     excercise = relationship("Excercise", back_populates="user_answers")
     answer = relationship("Answer", back_populates="user_answers")
+
+
+# ==========================================================
+# MODELO QUIZ
+# ==========================================================
+class Quiz(Base):
+    __tablename__ = "quiz"
+
+    id_quiz = Column(Integer, primary_key=True, autoincrement=True)
+    quiz_name = Column(String(30), nullable=False)
+    question = Column(Text, nullable=False)
+    quiz_level = Column(SQLEnum(level_num), nullable=False)
+
+    answers_quiz = relationship("Answer_Quiz", back_populates="quiz")
+    user_answers_quiz = relationship("UserAnswer_Quiz", back_populates="quiz")
+
+
+# ==========================================================
+# MODELO ANSWER_QUIZ
+# ==========================================================
+class Answer_Quiz(Base):
+    __tablename__ = "answer_quiz"
+
+    id_answer_quiz = Column(Integer, primary_key=True, autoincrement=True)
+    answer_text = Column(Text, nullable=False)
+    is_correct = Column(Boolean, nullable=False)
+    id_quiz = Column(Integer, ForeignKey("quiz.id_quiz"), nullable=False)
+
+    quiz = relationship("Quiz", back_populates="answers_quiz")
+    user_answers_quiz = relationship("UserAnswer_Quiz", back_populates="answer_quiz")
+
+
+# ==========================================================
+# MODELO USER ANSWER QUIZ
+# ==========================================================
+class UserAnswer_Quiz(Base):
+    __tablename__ = "user_answer_quiz"
+
+    id_answer_user_quiz = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id_user = Column(Integer, ForeignKey("user.id_user", ondelete="CASCADE"), nullable=False)
+    id_quiz = Column(Integer, ForeignKey("quiz.id_quiz", ondelete="CASCADE"), nullable=False)
+    id_answer_quiz = Column(Integer, ForeignKey("answer_quiz.id_answer_quiz", ondelete="CASCADE"), nullable=False)
+
+    user_quiz = relationship("Usuario", back_populates="user_answers_quiz")
+    quiz = relationship("Quiz", back_populates="user_answers_quiz")
+    answer_quiz = relationship("Answer_Quiz", back_populates="user_answers_quiz")

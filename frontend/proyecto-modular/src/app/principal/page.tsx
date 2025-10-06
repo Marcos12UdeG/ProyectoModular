@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useState, useEffect } from "react";
 import { BookOpen, Users, BookMarked } from "lucide-react";
 import Image from "next/image";
@@ -29,31 +29,31 @@ export default function PrincipalPage() {
   ];
 
   const { user } = useUser();
-  const [userLevel, setUserLevel] = useState<string | null>(null);
+  const [welcomeMessage, setWelcomeMessage] = useState("Cargando...");
 
-  // Obtener nivel del usuario desde el endpoint
   useEffect(() => {
-    const fetchUserLevel = async () => {
-      if (!user?.id_user) return;
-
+    const ObtenerLevel = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/user/${user.id_user}/level`);
-        if (!res.ok) throw new Error("Error al obtener el nivel");
-
+        const res = await fetch(`http://localhost:8000/user/${user?.id_user}/level`);
+        if (!res.ok) throw new Error("Usuario no encontrado");
         const data = await res.json();
-        setUserLevel(data.predicted_level);
-      } catch (err) {
-        console.error("Error fetching user level:", err);
-        setUserLevel("No disponible");
+        console.log("Datos del usuario:", data);
+
+        // Formatear mensaje de bienvenida
+        setWelcomeMessage(`Bienvenido, ${data.Usuario}. Tu nivel es ${data.Nivel}`);
+      } catch (error) {
+        console.error("Error al obtener nivel:", error);
+        setWelcomeMessage("Bienvenido. Nivel no asignado");
       }
     };
 
-    fetchUserLevel();
-  }, [user]);
+    if (user?.id_user) {
+      ObtenerLevel();
+    }
+  }, [user?.id_user]);
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center bg-white px-4">
-      {/* Header */}
       <header className="flex flex-col md:flex-row items-center justify-center gap-4 mt-10 mb-12">
         <div className="h-20 w-20 md:h-24 md:w-24 rounded-full overflow-hidden shadow-lg border-4 border-[#6D4C41]">
           <Image
@@ -69,15 +69,9 @@ export default function PrincipalPage() {
         </h1>
       </header>
 
-      {/* Nivel de usuario */}
-      <p className="text-lg mb-6">
-        Tu nivel de inglés actual es:{" "}
-        <span className="font-bold text-[#6D4C41]">
-          {userLevel ?? "Cargando..."}
-        </span>
-      </p>
+      {/* Mensaje de bienvenida */}
+      <p className="text-lg mb-6 font-bold text-[#6D4C41]">{welcomeMessage}</p>
 
-      {/* Subtítulo */}
       <section className="text-center max-w-2xl mb-12">
         <h2 className="text-2xl md:text-3xl font-semibold text-[#4E342E] mb-3">
           Aprende inglés de forma divertida
@@ -87,7 +81,6 @@ export default function PrincipalPage() {
         </p>
       </section>
 
-      {/* Tarjetas */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-full max-w-6xl">
         {sections.map((section, index) => (
           <Link key={index} href={section.link} passHref>
@@ -100,7 +93,6 @@ export default function PrincipalPage() {
         ))}
       </div>
 
-      {/* Estadísticas */}
       <div className="flex flex-wrap justify-center gap-6 text-sm md:text-base text-[#3E2723] font-medium mt-12">
         <span>✔️ 50+ Lecciones</span>
         <span>📖 15 Historias</span>

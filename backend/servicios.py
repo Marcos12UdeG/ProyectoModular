@@ -9,11 +9,10 @@ import pandas as pd
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
-from backend.modelo_predictivo import generate_features
-from backend.models import Answer, Excercise, Tale, UserAnswer, UserSessionHistory, Usuario, level_num
+from backend.models import Answer, Answer_Quiz, Excercise, Quiz, Tale, UserAnswer, UserAnswer_Quiz, UserSessionHistory, Usuario, level_num
 from googletrans import Translator
 from datetime import datetime, timezone
-
+from sqlalchemy import func
 
 # ---------------- Pydantic Schemas ----------------
 class UsuarioCreate(BaseModel):
@@ -27,6 +26,7 @@ class UsuarioRead(BaseModel):
     password: str
     email: EmailStr
     id_session: int | None = None
+
     model_config = {"from_attributes": True}
 
 class LoginRequest(BaseModel):
@@ -93,6 +93,28 @@ class TalesWithExcercises(BaseModel):
     level_type: level_num
     excercises: list[ExcerciseWithAnswersRead]
 
+class Answer_Quiz_Read(BaseModel):
+    id_answer_quiz:int
+    answer_text:str
+    is_correct:bool
+
+class QuizWithExcercise(BaseModel):
+    id_quiz:int
+    question:str
+    quiz_level: level_num
+    answers: list[Answer_Quiz_Read]
+
+    class Config:
+        orm_mode = True
+
+class SubmitExcercise(BaseModel):
+    id_quiz:int
+    id_answer_quiz:int
+
+class Submit_Quiz(BaseModel):
+    id_user:int
+    answers: list[SubmitExcercise]
+
 # ---------------- Router ----------------
 router = APIRouter()
 translator = Translator()
@@ -116,6 +138,20 @@ model = joblib.load("user_level_model.pkl")
 def obtener_usuario(db: Session = Depends(get_db)):
     return db.query(Usuario).all()
 
+@router.get("/user/{id_user}/level")
+def obtener_nivel_usuario(id_user:int, db:Session = Depends(get_db)):
+    print("🧩 ID recibido:", id_user)
+    usuario = db.query(Usuario).filter(Usuario.id_user == id_user).first()
+
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    results = {
+    "Usuario": usuario.name,
+    "Nivel": usuario.assigned_level
+    }
+
+    return results
 
 @router.post("/create", response_model=UsuarioCreate)
 def crear_usuario(request: UsuarioCreate, db: Session = Depends(get_db)):
@@ -130,26 +166,6 @@ def crear_usuario(request: UsuarioCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return new_user
-
-@router.get("/user/{id_user}/level")
-def get_user_level(id_user: int):
-    # Cargar CSV con todas las respuestas
-    df = pd.read_csv("user_responses.csv")
-    
-    # Filtrar solo las respuestas del usuario
-    df_user = df[df['id_user'] == id_user]
-    
-    if df_user.empty:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado o sin respuestas")
-    
-    # Generar features y predecir nivel
-    X_user = generate_features(df_user)
-    predicted_level = model.predict(X_user)
-    
-    return {
-        "id_user": id_user,
-        "predicted_level": predicted_level[0]  # como es un array de 1 elemento
-    }
 
 # ------------------------------------------------------------------------------------------
 
@@ -351,3 +367,80 @@ def submit_exercise(request: SubmitExercise, db: Session = Depends(get_db)):
     db.commit()
     return {"status": "ok", "message": "Respuestas guardadas correctamente"}
     
+@router.post("/submit-quiz")
+def submit_quiz(submission: Submit_Quiz, db: Session = Depends(get_db)):
+    user_id = submission.id_user
+
+    # 1️⃣ Guardar respuestas del usuario
+    for ans in submission.answers:
+        new_answer = UserAnswer_Quiz(
+            id_user=user_id,
+            id_quiz=ans.id_quiz,
+            id_answer_quiz=ans.id_answer_quiz
+        )
+        db.add(new_answer)
+    db.commit()
+
+    # 2️⃣ Calcular respuestas correctas por nivel
+    results = (
+        db.query(Quiz.quiz_level, func.count().label("correct_answers"))  # ✅ func en lugar de db.func
+        .join(Answer_Quiz, Quiz.id_quiz == Answer_Quiz.id_quiz)
+        .join(UserAnswer_Quiz, UserAnswer_Quiz.id_answer_quiz == Answer_Quiz.id_answer_quiz)
+        .filter(UserAnswer_Quiz.id_user == user_id, Answer_Quiz.is_correct == True)
+        .group_by(Quiz.quiz_level)
+        .all()
+    )
+
+    if not results:
+        raise HTTPException(status_code=400, detail="No se encontraron respuestas correctas.")
+
+    # 3️⃣ Determinar el nivel con más aciertos
+    top_level = max(results, key=lambda x: x.correct_answers).quiz_level
+
+    # 4️⃣ Actualizar el nivel asignado del usuario
+    user = db.query(Usuario).filter(Usuario.id_user == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    
+    user.assigned_level = top_level
+    db.commit()
+
+    return {
+        "message": f"Respuestas guardadas correctamente. Nivel asignado: {top_level}",
+        "assigned_level": top_level
+    }
+
+@router.get("/quiz/{id_quiz}/answer")
+def obtener_quiz(id_quiz: int, db: Session = Depends(get_db)):
+
+    quiz = db.query(Quiz).filter(Quiz.id_quiz == id_quiz).first()
+    if not quiz:
+        return {"error": "Quiz no encontrado"}
+    
+
+    answers = db.query(Answer_Quiz).filter(Answer_Quiz.id_quiz == id_quiz).all()
+
+    quiz_con_respuestas = {
+        "id_quiz": quiz.id_quiz,
+        "quiz_name": quiz.quiz_name,
+        "question": quiz.question,
+        "quiz_level": quiz.quiz_level,
+        "answers": [
+            {
+                "id_answer_quiz": a.id_answer_quiz,
+                "answer_text": a.answer_text,
+                "is_correct": a.is_correct
+            }
+            for a in answers
+        ]
+    }
+
+    return quiz_con_respuestas
+
+
+@router.get("/quizes")
+def ObtenerQuizes(db:Session = Depends(get_db)):
+    quizes = db.query(Quiz).all()
+
+    return quizes
+
