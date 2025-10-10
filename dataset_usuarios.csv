@@ -1,0 +1,4 @@
+id_user,nivel_actual,total_quizzes,total_respuestas,promedio_aciertos,total_sesiones,tiempo_promedio_sesion,semanas_activas,tasa_mejora
+30001,B1,17,442,0.5294,26,54.75,0.7143,0.74117647
+1,A1,17,1938,0.6471,38,45.0,1.2857,0.50326797
+90001,A1,17,51,0.8235,3,11.0,0.5714,1.44117647

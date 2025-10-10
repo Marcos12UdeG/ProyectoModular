@@ -6,6 +6,7 @@ interface User {
   name: string;
   email: string;
   id_session?: number;
+  assigned_level:string;
 }
 
 interface UserContextType {

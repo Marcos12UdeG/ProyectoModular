@@ -16,7 +16,7 @@ export default function Home() {
     e.preventDefault();
 
     try {
-      const res = await fetch("https://storytellermodular.lat/api/login", {
+      const res = await fetch("http://localhost:8000/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -78,7 +78,6 @@ export default function Home() {
                 required
               />
             </div>
-
             <div>
               <label className="block text-sm font-semibold text-[#4E342E]">
                 PASSWORD

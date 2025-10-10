@@ -9,6 +9,7 @@ import pandas as pd
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
+from .model_trainer import predict_user_progress
 from backend.models import Answer, Answer_Quiz, Excercise, Quiz, Tale, UserAnswer, UserAnswer_Quiz, UserSessionHistory, Usuario, level_num
 from googletrans import Translator
 from datetime import datetime, timezone
@@ -129,7 +130,6 @@ def get_db():
         db.close()
 
 UPLOAD_DIR = "frontend/proyecto-modular/public/images"
-model = joblib.load("user_level_model.pkl")
 
 # ---------------- Endpoints ----------------
 
@@ -444,3 +444,9 @@ def ObtenerQuizes(db:Session = Depends(get_db)):
 
     return quizes
 
+#Obtener progreso
+
+@router.get("/predict/{id_user}")
+def predict(id_user: int):
+
+    return predict_user_progress(id_user)

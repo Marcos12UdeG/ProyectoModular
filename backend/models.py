@@ -4,9 +4,7 @@ from backend.database import Base
 from enum import Enum
 from sqlalchemy.orm import relationship
 
-# ==========================================================
-# ENUMERACIONES
-# ==========================================================
+
 class level_num(str, Enum):
     A1 = "A1"
     A2 = "A2"
@@ -25,9 +23,6 @@ class Role(str, Enum):
     usuario = "usuario"
 
 
-# ==========================================================
-# MODELO USUARIO
-# ==========================================================
 class Usuario(Base):
     __tablename__ = "user"
 
@@ -46,9 +41,6 @@ class Usuario(Base):
     user_answers_quiz = relationship("UserAnswer_Quiz", back_populates="user_quiz")
 
 
-# ==========================================================
-# MODELO TALE
-# ==========================================================
 class Tale(Base):
     __tablename__ = "tale"
 
@@ -60,9 +52,7 @@ class Tale(Base):
     excercises = relationship("Excercise", back_populates="tale")
 
 
-# ==========================================================
-# MODELO EXCERCISE
-# ==========================================================
+
 class Excercise(Base):
     __tablename__ = "excercises"
 
@@ -77,9 +67,7 @@ class Excercise(Base):
     user_answers = relationship("UserAnswer", back_populates="excercise")
 
 
-# ==========================================================
-# MODELO ANSWER
-# ==========================================================
+
 class Answer(Base):
     __tablename__ = "answer"
 
@@ -92,9 +80,6 @@ class Answer(Base):
     user_answers = relationship("UserAnswer", back_populates="answer")
 
 
-# ==========================================================
-# MODELO USER SESSION HISTORY
-# ==========================================================
 class UserSessionHistory(Base):
     __tablename__ = "user_session_history"
 
@@ -107,9 +92,6 @@ class UserSessionHistory(Base):
     user = relationship("Usuario", back_populates="sessions")
 
 
-# ==========================================================
-# MODELO USER ANSWER (para ejercicios)
-# ==========================================================
 class UserAnswer(Base):
     __tablename__ = "user_answer"
 
@@ -123,9 +105,7 @@ class UserAnswer(Base):
     answer = relationship("Answer", back_populates="user_answers")
 
 
-# ==========================================================
-# MODELO QUIZ
-# ==========================================================
+
 class Quiz(Base):
     __tablename__ = "quiz"
 
@@ -138,9 +118,7 @@ class Quiz(Base):
     user_answers_quiz = relationship("UserAnswer_Quiz", back_populates="quiz")
 
 
-# ==========================================================
-# MODELO ANSWER_QUIZ
-# ==========================================================
+
 class Answer_Quiz(Base):
     __tablename__ = "answer_quiz"
 
@@ -153,9 +131,7 @@ class Answer_Quiz(Base):
     user_answers_quiz = relationship("UserAnswer_Quiz", back_populates="answer_quiz")
 
 
-# ==========================================================
-# MODELO USER ANSWER QUIZ
-# ==========================================================
+
 class UserAnswer_Quiz(Base):
     __tablename__ = "user_answer_quiz"
 
