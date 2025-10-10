@@ -1,7 +1,0 @@
-id_user,user_name,id_excercise,excercise_name,excercise_type,id_answer,answer_text,is_correct,id_lesson,lesson_title,id_tale,cuento_level
-1,Marcos Acosta,60001,Excercise 1,reading,60001,On Earth,0,60001,Leccion 1,60001,A2
-1,Marcos Acosta,90001,Excercise 2,reading,90001,He played with the volcanoes,0,60001,Leccion 1,60001,A2
-1,Marcos Acosta,90002,Excercise 3,reading,90005,False,0,60001,Leccion 1,60001,A2
-1,Marcos Acosta,120001,Excercise 1,reading,120002,Who is the most beautiful in the kingdom?,1,120001,Leecion 1,60003,B2
-1,Marcos Acosta,120002,Excercise 2,reading,120005,He did not have the heart to hurt her,1,120001,Leecion 1,60003,B2
-1,Marcos Acosta,120003,Excercise 3,reading,120008,With the help of the seven dwarfs and her courage,1,120001,Leecion 1,60003,B2

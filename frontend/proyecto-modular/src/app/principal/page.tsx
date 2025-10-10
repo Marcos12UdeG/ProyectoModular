@@ -1,33 +1,42 @@
 "use client";
+<<<<<<< HEAD
 import React, { useState, useEffect } from "react";
 import { BookOpen, Users, BookMarked } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import UserMenu from "../usermenu/menu";
 import { useUser } from "../context/UserContext";
+=======
 
-export default function PrincipalPage() {
+import { useRouter } from "next/navigation";
+import { BookOpen, BookMarked, Sparkles } from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+
+const Index = () => {
+  const router = useRouter();
+>>>>>>> e778024 (servidor)
+
   const sections = [
     {
-      title: "Historias",
-      text: "Fascinantes relatos para practicar tu inglés. (Desde la lección 5)",
-      icon: <BookMarked className="h-10 w-10 mb-4 text-white" />,
+      title: "Stories",
+      text: "Fascinating tales to practice your English. Improve while having fun!",
+      icon: BookMarked,
+      color: "bg-orange-500",
+      textColor: "text-orange-600",
       link: "/cuentos",
     },
     {
-      title: "Lecciones",
-      text: "Aprende paso a paso con lecciones cortas e interactivas.",
-      icon: <BookOpen className="h-10 w-10 mb-4 text-white" />,
-      link: "/lecciones",
-    },
-    {
-      title: "Grupos",
-      text: "Conéctate con estudiantes y comparte tu progreso.",
-      icon: <Users className="h-10 w-10 mb-4 text-white" />,
-      link: "/grupos",
+      title: "Lessons",
+      text: "Learn step by step with short, interactive lessons.",
+      icon: BookOpen,
+      color: "bg-purple-500",
+      textColor: "text-purple-600",
+      link: "/ejercicios/[id_tale]",
     },
   ];
 
+<<<<<<< HEAD
   const { user } = useUser();
   const [welcomeMessage, setWelcomeMessage] = useState("Cargando...");
 
@@ -98,7 +107,75 @@ export default function PrincipalPage() {
         <span>📖 15 Historias</span>
         <span>👥 200 Estudiantes</span>
         <UserMenu />
+=======
+  return (
+    <div className="h-screen flex flex-col justify-between bg-gradient-to-b from-[#F5F0EB] via-[#E8DED4] to-[#D7CCC8] overflow-hidden">
+      <div className="container mx-auto px-4 py-6 flex-1 flex flex-col justify-center">
+        {/* Hero Section */}
+        <header className="text-center max-w-3xl mx-auto mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-orange-500 mb-3 shadow-lg">
+            <BookOpen className="h-8 w-8 text-white" />
+          </div>
+
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-2 tracking-tight bg-gradient-to-r from-orange-500 to-orange-700 bg-clip-text text-transparent">
+            STORYTELLER
+          </h1>
+
+          <h2 className="text-lg md:text-xl font-semibold text-[#3E2723] mb-1">
+            Learn English in a Fun Way
+          </h2>
+          <p className="text-sm md:text-base text-[#5D4037] mb-4">
+            Stories and lessons designed just for you. Start your journey today!
+          </p>
+
+          {/* CTA */}
+          <Button
+            size="lg"
+            className="gap-2 bg-orange-500 hover:bg-orange-600 text-white px-8 py-2 rounded-full shadow-md mb-4 whitespace-nowrap"
+            onClick={() => router.push("/lessons")}
+          >
+            Start Learning
+          </Button>
+
+          {/* Stats */}
+          <div className="flex justify-center gap-6 text-xs md:text-sm text-[#4E342E] font-medium">
+            <span className="flex items-center gap-1">✔ 50+ Lessons</span>
+            <span className="flex items-center gap-1">📖 15 Stories</span>
+            <span className="flex items-center gap-1">👥 200 Students</span>
+          </div>
+        </header>
+
+        {/* Section Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto w-full">
+          {sections.map(({ title, text, icon: Icon, color, textColor, link }, i) => (
+            <Card
+              key={i}
+              className="p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition cursor-pointer group"
+              onClick={() => router.push(link)}
+            >
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div
+                  className={`w-14 h-14 rounded-xl ${color} flex items-center justify-center shadow-md group-hover:scale-105 transition`}
+                >
+                  <Icon className="h-7 w-7 text-white" />
+                </div>
+                <h3 className={`text-lg font-bold uppercase ${textColor}`}>
+                  {title}
+                </h3>
+                <p className="text-xs md:text-sm text-muted-foreground leading-snug">
+                  {text}
+                </p>
+                <Button variant="ghost" className="mt-1 text-sm hover:bg-gray-100">
+                  Explore →
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+>>>>>>> e778024 (servidor)
       </div>
     </div>
   );
-}
+};
+
+export default Index;
