@@ -10,7 +10,7 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from backend.database import SessionLocal
 from .model_trainer import predict_user_progress
-from backend.models import Answer, Answer_Quiz, Excercise, Quiz, Tale, UserAnswer, UserAnswer_Quiz, UserSessionHistory, Usuario, level_num
+from backend.models import Answer, Answer_Quiz, Excercise, Quiz, Tale, UserAnswer, UserAnswer_Quiz, UserModuleProgress, UserSessionHistory, Usuario, level_num
 from googletrans import Translator
 from datetime import datetime, timezone
 from sqlalchemy import func
@@ -82,7 +82,7 @@ class SubmitExerciseAnswer(BaseModel):
     id_excercise: int
     id_answer: int
 
-class SubmitExercise(BaseModel):
+class SubmitExerciseA(BaseModel):
     id_user: int
     answers: List[SubmitExerciseAnswer]
 
@@ -182,17 +182,17 @@ def crear_cuento(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    # Guardar imagen en /public/images/nombre_del_cuento.jpg
+
     filename = tale_name.replace(" ", "_").lower() + ".jpg"
     file_path = os.path.join(UPLOAD_DIR, filename)
 
-    # Crear carpeta si no existe
+
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Guardar en base de datos
+
     new_tale = Tale(
         tale_name=tale_name,
         content=content,
@@ -348,8 +348,8 @@ def verificar_usuario(request: LoginRequest, db: Session = Depends(get_db)):
 
 #Respuestas Usuario
 
-@router.post("/submit-exercise")
-def submit_exercise(request: SubmitExercise, db: Session = Depends(get_db)):
+@router.post("/submit-excercise")
+def submit_exercise(request: SubmitExerciseA, db: Session = Depends(get_db)):
     """
     Guarda las respuestas de un usuario para múltiples ejercicios.
     """
@@ -437,7 +437,6 @@ def obtener_quiz(id_quiz: int, db: Session = Depends(get_db)):
 
     return quiz_con_respuestas
 
-
 @router.get("/quizes")
 def ObtenerQuizes(db:Session = Depends(get_db)):
     quizes = db.query(Quiz).all()
@@ -450,3 +449,47 @@ def ObtenerQuizes(db:Session = Depends(get_db)):
 def predict(id_user: int):
 
     return predict_user_progress(id_user)
+
+
+@router.get("/evaluate-tale/{id_tale}")
+def EvaluarCuento(id_tale: int, id_user: int, db: Session = Depends(get_db)):
+
+    total_ejercicios = db.query(Excercise).filter(Excercise.id_tale == id_tale).count()
+
+    if total_ejercicios == 0:
+        raise HTTPException(status_code=400, detail="Este cuento no tiene ejercicios")
+
+    correct_answer = (
+        db.query(UserAnswer)
+        .join(Answer, Answer.id_answer == UserAnswer.id_answer)
+        .join(Excercise, Excercise.id_excercise == UserAnswer.id_excercise)
+        .filter(
+            UserAnswer.id_user == id_user,
+            Excercise.id_tale == id_tale,
+            Answer.is_correct == True
+        )
+        .count()
+    )
+
+    score = (correct_answer / total_ejercicios) * 100
+
+    progress = db.query(UserModuleProgress).filter_by(id_user=id_user, id_tale=id_tale).first()
+    
+    if not progress:
+        progress = UserModuleProgress(id_user=id_user, id_tale=id_tale)
+        db.add(progress)
+    
+
+    if score >= 60:
+        progress.is_completed = True
+        progress.completion_date = datetime.now(timezone.utc)
+        db.commit()
+        return {"status": "completed", "score": score}
+    else:
+        db.commit()
+        return {"status": "failed", "score": score}
+
+@router.get("/progress/{id_user}/{id_tale}")
+def get_progress(id_user: int, id_tale: int, db: Session = Depends(get_db)):
+    progress = db.query(UserModuleProgress).filter_by(id_user=id_user, id_tale=id_tale).first()
+    return {"is_completed": bool(progress and progress.is_completed)}

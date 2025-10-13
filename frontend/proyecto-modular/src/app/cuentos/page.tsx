@@ -2,13 +2,15 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Pause, Play, Trash2 } from "lucide-react";
+import { Pause, Play, Trash2, Lock } from "lucide-react";
+import { useUser } from "../context/UserContext";
 
 interface Tale {
   id_tale: number;
   tale_name: string;
   content: string;
   level_type: string;
+  is_completed?: boolean; // opcional porque lo traemos aparte
 }
 
 export default function CuentosPage() {
@@ -16,7 +18,7 @@ export default function CuentosPage() {
   const [synth, setSynth] = useState<SpeechSynthesis | null>(null);
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
-
+  const { user } = useUser();
   const [showModal, setShowModal] = useState(false);
   const [taleName, setTaleName] = useState("");
   const [content, setContent] = useState("");
@@ -27,14 +29,31 @@ export default function CuentosPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") setSynth(window.speechSynthesis);
-    fetchTales();
-  }, []);
+    if (user) fetchTales();
+  }, [user]);
 
   const fetchTales = async () => {
     try {
       const res = await fetch("http://localhost:8000/tales");
       const data = await res.json();
-      setTales(data);
+
+      // Ahora obtenemos el progreso de cada cuento
+      const talesWithProgress = await Promise.all(
+        data.map(async (tale: Tale) => {
+          try {
+            const res = await fetch(
+              `http://localhost:8000/progress/${user?.id_user}/${tale.id_tale}`
+            );
+            const progressData = await res.json();
+            return { ...tale, is_completed: progressData.is_completed || false };
+          } catch (error) {
+            console.error("Error al obtener progreso:", error);
+            return { ...tale, is_completed: false };
+          }
+        })
+      );
+
+      setTales(talesWithProgress);
     } catch (error) {
       console.error("Error al obtener los cuentos", error);
     }
@@ -151,16 +170,25 @@ export default function CuentosPage() {
                 return (
                   <div
                     key={tale.id_tale}
-                    className="bg-white/95 rounded-3xl shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all p-6 flex flex-col justify-between"
+                    className="bg-white/95 rounded-3xl shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all p-6 flex flex-col justify-between relative"
                   >
                     <h2 className="text-2xl font-bold text-[#4E342E] mb-2">
                       {tale.tale_name}
                     </h2>
-                    
+
+                    {/* Candado si está completado */}
+                    {tale.is_completed && (
+                      <div className="absolute top-4 right-4 bg-[#6D4C41]/80 text-white rounded-full p-2 shadow-md">
+                        <Lock size={20} />
+                      </div>
+                    )}
+
                     <img
                       src={imageUrl}
                       alt={tale.tale_name}
-                      className="w-full h-48 object-cover rounded-2xl mb-4 shadow-md"
+                      className={`w-full h-48 object-cover rounded-2xl mb-4 shadow-md ${
+                        tale.is_completed ? "opacity-50" : ""
+                      }`}
                     />
 
                     <p className="text-sm text-gray-700 mb-4 line-clamp-3">
@@ -175,10 +203,21 @@ export default function CuentosPage() {
 
                     <div className="flex gap-3 items-center">
                       <Link
-                        href={`/ejercicios/${tale.id_tale}`}
-                        className="flex-1 text-center py-2 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition"
+                        href={
+                          tale.is_completed
+                            ? "#"
+                            : `/ejercicios/${tale.id_tale}`
+                        }
+                        onClick={(e) => {
+                          if (tale.is_completed) e.preventDefault();
+                        }}
+                        className={`flex-1 text-center py-2 rounded-xl shadow-md transition ${
+                          tale.is_completed
+                            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                            : "bg-[#6D4C41] text-white hover:bg-[#4E342E]"
+                        }`}
                       >
-                        Ver Ejercicios
+                        {tale.is_completed ? "Completado" : "Ver Ejercicios"}
                       </Link>
 
                       <button

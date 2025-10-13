@@ -56,7 +56,13 @@ y_pred = model.predict(X_test)
 print("\n=== MATRIZ DE CONFUSIÓN ===")
 print(confusion_matrix(y_test, y_pred))
 print("\n=== REPORTE DE CLASIFICACIÓN ===")
-print(classification_report(y_test, y_pred, target_names=label_encoder.classes_))
+print(classification_report(
+    y_test,
+    y_pred,
+    labels=range(len(label_encoder.classes_)),   # ← usa todos los índices
+    target_names=label_encoder.classes_,
+    zero_division=0                             # evita errores por división 0
+))
 
 # ======================================
 # GUARDAR MODELO, ESCALADOR Y LABEL ENCODER

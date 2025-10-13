@@ -39,6 +39,7 @@ class Usuario(Base):
     sessions = relationship("UserSessionHistory", back_populates="user")
     user_answers = relationship("UserAnswer", back_populates="user")
     user_answers_quiz = relationship("UserAnswer_Quiz", back_populates="user_quiz")
+    user_progress = relationship("UserModuleProgress",back_populates="user_table")
 
 
 class Tale(Base):
@@ -50,7 +51,7 @@ class Tale(Base):
     level_type = Column(SQLEnum(level_num), nullable=False)
 
     excercises = relationship("Excercise", back_populates="tale")
-
+    tale_progress = relationship("UserModuleProgress", back_populates="tale_table")
 
 
 class Excercise(Base):
@@ -143,3 +144,16 @@ class UserAnswer_Quiz(Base):
     user_quiz = relationship("Usuario", back_populates="user_answers_quiz")
     quiz = relationship("Quiz", back_populates="user_answers_quiz")
     answer_quiz = relationship("Answer_Quiz", back_populates="user_answers_quiz")
+
+
+class UserModuleProgress(Base):
+    __tablename__ = "user_progress"
+
+    id_progress = Column(Integer,primary_key=True,autoincrement=True)
+    id_user = Column(Integer, ForeignKey("user.id_user"),nullable=False)
+    id_tale = Column(Integer, ForeignKey("tale.id_tale"),nullable=False)
+    is_completed = Column(Boolean,default=False)
+    completion_date = Column(TIMESTAMP(timezone=True), nullable=True)
+
+    user_table = relationship("Usuario",back_populates="user_progress")
+    tale_table = relationship("Tale",back_populates="tale_progress")
