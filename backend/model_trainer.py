@@ -8,7 +8,7 @@ import joblib
 # ======================================
 # CARGAR DATASET
 # ======================================
-df = pd.read_csv("dataset_usuarios.csv")
+df = pd.read_csv("usuarios.csv") 
 print("Datos cargados:", df.shape)
 
 # ======================================
@@ -21,10 +21,10 @@ label_encoder = LabelEncoder()
 df["nivel_encoded"] = label_encoder.fit_transform(df["nivel_actual"])
 
 # ======================================
-# DEFINICIÓN DE VARIABLES
+# DEFINICIÓN DE VARIABLES (X, y)
 # ======================================
 X = df[[
-    "total_quizzes",
+    "total_ejercicios",
     "total_respuestas",
     "promedio_aciertos",
     "total_sesiones",
@@ -38,49 +38,52 @@ y = df["nivel_encoded"]
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# ======================================
-# DIVISIÓN DE DATOS
-# ======================================
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-# ======================================
-# ENTRENAMIENTO DEL MODELO
-# ======================================
+X_train, X_test, y_train, y_test = train_test_split(
+    X_scaled, y, test_size=0.2, random_state=42
+)
+
 model = RandomForestClassifier(n_estimators=200, random_state=42)
 model.fit(X_train, y_train)
 
-# ======================================
-# EVALUACIÓN
-# ======================================
+
 y_pred = model.predict(X_test)
 print("\n=== MATRIZ DE CONFUSIÓN ===")
 print(confusion_matrix(y_test, y_pred))
 print("\n=== REPORTE DE CLASIFICACIÓN ===")
-print(classification_report(
-    y_test,
-    y_pred,
-    labels=range(len(label_encoder.classes_)),   # ← usa todos los índices
-    target_names=label_encoder.classes_,
-    zero_division=0                             # evita errores por división 0
-))
+print(
+    classification_report(
+        y_test,
+        y_pred,
+        labels=range(len(label_encoder.classes_)),
+        target_names=label_encoder.classes_,
+        zero_division=0,
+    )
+)
 
-# ======================================
-# GUARDAR MODELO, ESCALADOR Y LABEL ENCODER
-# ======================================
+
 joblib.dump(model, "ml/modelo_prediccion_nivel.pkl")
 joblib.dump(scaler, "ml/scaler.pkl")
 joblib.dump(label_encoder, "ml/label_encoder.pkl")
 
 print("✅ Modelo entrenado y guardado correctamente.")
 
-# Función para predicción
-def predict_user_progress(id_user: int, df=df, model=model, scaler=scaler, label_encoder=label_encoder):
+# ======================================
+# FUNCIÓN DE PREDICCIÓN POR USUARIO
+# ======================================
+def predict_user_progress(
+    id_user: int,
+    df=df,
+    model=model,
+    scaler=scaler,
+    label_encoder=label_encoder,
+):
     user = df[df["id_user"] == id_user]
     if user.empty:
         return {"error": "Usuario no encontrado o sin datos suficientes"}
 
     X_user = user[[
-        "total_quizzes",
+        "total_ejercicios",
         "total_respuestas",
         "promedio_aciertos",
         "total_sesiones",
@@ -88,6 +91,7 @@ def predict_user_progress(id_user: int, df=df, model=model, scaler=scaler, label
         "semanas_activas",
         "tasa_mejora"
     ]]
+
     X_scaled = scaler.transform(X_user)
     pred_encoded = model.predict(X_scaled)[0]
     nivel_predicho = label_encoder.inverse_transform([pred_encoded])[0]

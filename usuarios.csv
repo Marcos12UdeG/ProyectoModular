@@ -1,0 +1,9 @@
+id_user,name,nivel_actual,total_ejercicios,total_respuestas,promedio_aciertos,total_sesiones,tiempo_promedio_sesion,semanas_activas,tasa_mejora
+60001,Francisco Altamirano,B2,20,40,0.525,12,1630.1667,2.4286,0.21617647
+240001,ejemplo,A1,4,8,0.5,12,200.3333,2.1429,0.23333333
+30001,Angela Leon,B1,18,18,0.8889,38,45.9,2.5714,0.34567901
+1,Marcos Acosta,A1,38,38,0.9474,103,85.0645,3.1429,0.30143541
+90001,Erika Patricia,A1,0,0,0.0,3,11.0,2.4286,0.0
+300001,Luis Assetel,A1,0,0,0.0,2,0.0,1.2857,0.0
+150001,x,A2,0,0,0.0,9,868.0,2.4286,0.0
+360001,Antonio Sanchez,A1,0,0,0.0,4,66.0,0.0,0.0

@@ -9,9 +9,10 @@ import { useUser } from "../context/UserContext";
 import ReactSpeedometer from "react-d3-speedometer";
 
 interface Prediccion {
+  id_user: number;
   mensaje: string;
   nivel_actual: string;
-  nivel_predicho: string; // nivel asignado por quiz
+  nivel_predicho: string;
 }
 
 const Index = () => {
@@ -34,17 +35,30 @@ const Index = () => {
     },
   ];
 
-  // Fetch predicción del usuario
+  // 🌐 Llamar al endpoint de predicción
   useEffect(() => {
     if (!user?.id_user) return;
 
-    const fetchUserData = async () => {
+    const fetchUserPrediction = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/predict/${user.id_user}`);
+        const res = await fetch(
+          `http://localhost:8000/predict/${user.id_user}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error(`Error HTTP: ${res.status}`);
+        }
+
         const data = await res.json();
 
         if (data.error) {
-          setWelcomeMessage("Bienvenido. Nivel no asignado");
+          setWelcomeMessage(`Bienvenido, ${user.name}. ${data.error}`);
         } else {
           setPrediccion(data);
           setWelcomeMessage(
@@ -52,15 +66,15 @@ const Index = () => {
           );
         }
       } catch (error) {
-        console.error("Error al obtener predicción:", error);
-        setWelcomeMessage("Bienvenido. Nivel no asignado");
+        console.error("Error al obtener la predicción:", error);
+        setWelcomeMessage("Bienvenido. No se pudo obtener tu nivel.");
       }
     };
 
-    fetchUserData();
-  }, [user?.id_user]);
+    fetchUserPrediction();
+  }, [user?.id_user, user?.name]);
 
-  // Convertir nivel a valor numérico (0-100)
+  // 📊 Convertir nivel (A1–C1) a valor para el velocímetro
   const nivelToValue = (nivel: string) => {
     const mapa: Record<string, number> = {
       A1: 20,
@@ -90,22 +104,32 @@ const Index = () => {
         </h1>
       </header>
 
-      {/* Bienvenida */}
+      {/* Mensaje de bienvenida */}
       <div className="text-center mb-12">
-        <p className="text-2xl md:text-3xl font-semibold text-[#5D4037]">{welcomeMessage}</p>
+        <p className="text-2xl md:text-3xl font-semibold text-[#5D4037]">
+          {welcomeMessage}
+        </p>
       </div>
 
-      {/* Velocímetro */}
+      {/* Velocímetro con predicción */}
       {prediccion && (
         <div className="flex flex-col items-center mb-16">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#5D4037] mb-6">Progreso</h2>
+          <h2 className="text-2xl md:text-3xl font-bold text-[#5D4037] mb-6">
+            Progreso
+          </h2>
           <ReactSpeedometer
             maxValue={100}
             value={nivelToValue(prediccion.nivel_predicho)}
             segments={5}
             startColor="#8BFF5A"
             endColor="#FF4D4D"
-            segmentColors={["#8BFF5A", "#D4FF00", "#FFD700", "#FF7F50", "#FF4D4D"]}
+            segmentColors={[
+              "#8BFF5A",
+              "#D4FF00",
+              "#FFD700",
+              "#FF7F50",
+              "#FF4D4D",
+            ]}
             needleColor="#6D4C41"
             ringWidth={30}
             width={350}
@@ -120,7 +144,7 @@ const Index = () => {
             ]}
           />
           <p className="text-sm md:text-base mt-4 text-[#5D4037]">
-            Nivel asignado por quiz: <b>{prediccion.nivel_predicho}</b>
+            Nivel predicho: <b>{prediccion.nivel_predicho}</b>
           </p>
         </div>
       )}
@@ -137,15 +161,19 @@ const Index = () => {
             <Link key={index} href={href}>
               <div className="cursor-pointer bg-[#6D4C41] text-white p-8 rounded-3xl shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:scale-105 transition-all flex flex-col items-center text-center">
                 <section.icon className="h-10 w-10 mb-3" />
-                <h3 className="text-xl md:text-2xl font-bold mb-2 uppercase">{section.title}</h3>
-                <p className="text-sm md:text-base leading-snug">{section.text}</p>
+                <h3 className="text-xl md:text-2xl font-bold mb-2 uppercase">
+                  {section.title}
+                </h3>
+                <p className="text-sm md:text-base leading-snug">
+                  {section.text}
+                </p>
               </div>
             </Link>
           );
         })}
       </div>
 
-      {/* Estadísticas y menú */}
+      {/* Footer */}
       <div className="flex flex-wrap justify-center gap-6 text-sm md:text-base text-[#3E2723] font-medium mb-12">
         <span>✔️ 50+ Lecciones</span>
         <span>📖 15 Historias</span>

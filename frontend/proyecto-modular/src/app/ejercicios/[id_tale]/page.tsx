@@ -40,7 +40,7 @@ export default function EjerciciosConCuentoPage() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  // -------------------- Fetch cuento --------------------
+
   const fetchTale = async () => {
     try {
       const res = await fetch(`http://localhost:8000/tales/${id_tale}`);
@@ -51,7 +51,7 @@ export default function EjerciciosConCuentoPage() {
     }
   };
 
-  // -------------------- Fetch ejercicios --------------------
+
   const fetchExcercises = async () => {
     try {
       const res = await fetch(`http://localhost:8000/tales/${id_tale}/excercises`);
@@ -62,7 +62,7 @@ export default function EjerciciosConCuentoPage() {
     }
   };
 
-  // -------------------- Revisar progreso del cuento --------------------
+
   const checkCompletion = async () => {
     if (!user) return;
     try {
@@ -74,7 +74,6 @@ export default function EjerciciosConCuentoPage() {
     }
   };
 
-  // -------------------- Enviar respuestas --------------------
   const handleSubmitAnswers = async () => {
     if (!user) return alert("Debes iniciar sesión");
     setLoading(true);
@@ -91,7 +90,7 @@ export default function EjerciciosConCuentoPage() {
     }
 
     try {
-      // Guardar respuestas
+
       const res = await fetch("http://localhost:8000/submit-excercise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -104,7 +103,7 @@ export default function EjerciciosConCuentoPage() {
       if (!res.ok) throw new Error("Error al enviar respuestas");
       setMessage("✅ Respuestas guardadas correctamente.");
 
-      // Evaluar cuento
+
       const scoreRes = await fetch(
         `http://localhost:8000/evaluate-tale/${id_tale}?id_user=${user.id_user}`
       );

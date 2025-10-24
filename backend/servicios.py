@@ -20,6 +20,7 @@ class UsuarioCreate(BaseModel):
     name: str
     password: str
     email: EmailStr
+    role:str
 
 class UsuarioRead(BaseModel):
     id_user: int
@@ -27,7 +28,8 @@ class UsuarioRead(BaseModel):
     password: str
     email: EmailStr
     id_session: int | None = None
-
+    role:str
+    
     model_config = {"from_attributes": True}
 
 class LoginRequest(BaseModel):
@@ -161,6 +163,8 @@ def crear_usuario(request: UsuarioCreate, db: Session = Depends(get_db)):
         name=request.name,
         password=request.password,
         email=request.email,
+        role= request.role,
+        
     )
     db.add(new_user)
     db.commit()
@@ -341,7 +345,8 @@ def verificar_usuario(request: LoginRequest, db: Session = Depends(get_db)):
         name=user.name,
         password=user.password,
         email=user.email,
-        id_session=new_session.id_session
+        id_session=new_session.id_session,
+        role = user.role
     )
 
 # ------------------------------------------------------------------------------------------
@@ -447,8 +452,24 @@ def ObtenerQuizes(db:Session = Depends(get_db)):
 
 @router.get("/predict/{id_user}")
 def predict(id_user: int):
+    """
+    Predice el posible nivel futuro del usuario según su desempeño.
+    """
+    try:
+        model = joblib.load("ml/modelo_prediccion_nivel.pkl")
+        scaler = joblib.load("ml/scaler.pkl")
+        label_encoder = joblib.load("ml/label_encoder.pkl")
+        df = pd.read_csv("usuarios.csv")
 
-    return predict_user_progress(id_user)
+        from .model_trainer import predict_user_progress
+        result = predict_user_progress(id_user, df=df, model=model, scaler=scaler, label_encoder=label_encoder)
+        return result
+
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail=f"Archivo no encontrado: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la predicción: {e}")
+
 
 
 @router.get("/evaluate-tale/{id_tale}")
@@ -493,3 +514,26 @@ def EvaluarCuento(id_tale: int, id_user: int, db: Session = Depends(get_db)):
 def get_progress(id_user: int, id_tale: int, db: Session = Depends(get_db)):
     progress = db.query(UserModuleProgress).filter_by(id_user=id_user, id_tale=id_tale).first()
     return {"is_completed": bool(progress and progress.is_completed)}
+
+
+@router.get("/completados/{id_user}")
+def ObtenerProgresoUsuario(id_user: int, db: Session = Depends(get_db)):
+
+    total_completados = db.query(UserModuleProgress).filter_by(id_user=id_user).count()
+
+    if not total_completados:
+        raise HTTPException(status_code=404 , detail="No existe el usuario")
+
+    total_cuentos = db.query(Tale).count()
+    if total_cuentos == 0:
+        raise HTTPException(status_code=404, detail="No hay cuentos disponibles")
+
+
+    porcentaje = (total_completados / total_cuentos) * 100 if total_cuentos > 0 else 0
+
+    return {
+        "id_user": id_user,
+        "total_completados": total_completados,
+        "total_cuentos": total_cuentos,
+        "porcentaje": round(porcentaje, 2)
+    }

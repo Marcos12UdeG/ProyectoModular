@@ -10,7 +10,13 @@ interface Tale {
   tale_name: string;
   content: string;
   level_type: string;
-  is_completed?: boolean; // opcional porque lo traemos aparte
+  is_completed?: boolean;
+}
+
+interface Progreso {
+  total_completados: number;
+  total_cuentos: number;
+  porcentaje: number;
 }
 
 export default function CuentosPage() {
@@ -25,11 +31,16 @@ export default function CuentosPage() {
   const [levelType, setLevelType] = useState("");
   const [image, setImage] = useState<File | null>(null);
 
+  const [progreso, setProgreso] = useState<Progreso | null>(null); // 🟤 Nuevo estado
+
   const niveles = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
   useEffect(() => {
     if (typeof window !== "undefined") setSynth(window.speechSynthesis);
-    if (user) fetchTales();
+    if (user) {
+      fetchTales();
+      fetchProgreso(); // 🟤 Llamar progreso del usuario
+    }
   }, [user]);
 
   const fetchTales = async () => {
@@ -37,7 +48,6 @@ export default function CuentosPage() {
       const res = await fetch("http://localhost:8000/tales");
       const data = await res.json();
 
-      // Ahora obtenemos el progreso de cada cuento
       const talesWithProgress = await Promise.all(
         data.map(async (tale: Tale) => {
           try {
@@ -46,8 +56,7 @@ export default function CuentosPage() {
             );
             const progressData = await res.json();
             return { ...tale, is_completed: progressData.is_completed || false };
-          } catch (error) {
-            console.error("Error al obtener progreso:", error);
+          } catch {
             return { ...tale, is_completed: false };
           }
         })
@@ -59,40 +68,15 @@ export default function CuentosPage() {
     }
   };
 
-  const TraducirYLeer = async (texto: string) => {
-    if (!synth) return;
-    synth.cancel();
+  // 🟤 Función para obtener el progreso general
+  const fetchProgreso = async () => {
     try {
-      const res = await fetch("http://localhost:8000/traducir", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto, destino: "en" }),
-      });
+      const res = await fetch(`http://localhost:8000/completados/${user?.id_user}`);
+      if (!res.ok) throw new Error("Error al obtener el progreso");
       const data = await res.json();
-      const utter = new SpeechSynthesisUtterance(data.traduccion);
-      utter.lang = "en-US";
-      utter.onend = () => {
-        setIsSpeaking(false);
-        utterRef.current = null;
-      };
-      utterRef.current = utter;
-      synth.speak(utter);
-      setIsSpeaking(true);
+      setProgreso(data);
     } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const PausarReanudar = () => {
-    if (!synth || !utterRef.current) return;
-    if (synth.speaking) {
-      if (!synth.paused) {
-        synth.pause();
-        setIsSpeaking(false);
-      } else {
-        synth.resume();
-        setIsSpeaking(true);
-      }
+      console.error("Error al obtener progreso general", error);
     }
   };
 
@@ -103,6 +87,7 @@ export default function CuentosPage() {
       });
       if (!res.ok) throw new Error("Error al eliminar el cuento");
       setTales((prevTales) => prevTales.filter((tale) => tale.id_tale !== id_tale));
+      fetchProgreso(); // 🟤 Actualiza progreso tras eliminar
     } catch (error) {
       console.error(error);
     }
@@ -128,6 +113,7 @@ export default function CuentosPage() {
       if (!res.ok) throw new Error("Error al guardar cuento");
 
       await fetchTales();
+      await fetchProgreso();
       setShowModal(false);
       setTaleName("");
       setContent("");
@@ -139,19 +125,41 @@ export default function CuentosPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center">
-      {/* Título centrado con botón a la derecha */}
-      <div className="flex justify-between items-center w-full max-w-7xl px-4 mt-6 mb-8">
-        <h1 className="text-4xl font-extrabold text-[#3E2723] text-center flex-1">
-          📖 CUENTOS
-        </h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-6 py-3 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition ml-4"
-        >
-          ➕ Agregar Cuento
-        </button>
+    <div className="min-h-screen w-full flex flex-col items-center bg-[#FFFDF9]">
+  {/* Título centrado con progreso a la izquierda y botón a la derecha */}
+  <div className="flex flex-col sm:flex-row justify-between items-center w-full max-w-7xl px-4 mt-8 mb-8 gap-4">
+    
+    {/* 🟤 Cajita de progreso */}
+    {progreso && (
+      <div className="bg-[#FFF8E1] border border-[#FFD54F] rounded-2xl px-6 py-4 shadow-md flex flex-col items-center text-[#5D4037] min-w-[200px]">
+        <p className="text-lg font-semibold">
+          {progreso.total_completados} / {progreso.total_cuentos}
+        </p>
+        <p className="text-sm text-[#8D6E63]">Completados</p>
+        <div className="w-48 bg-gray-300 h-2 rounded-full mt-2">
+          <div
+            className="h-2 bg-[#6D4C41] rounded-full transition-all duration-500"
+            style={{ width: `${progreso.porcentaje}%` }}
+          ></div>
+        </div>
       </div>
+    )}
+
+    {/* Título centrado */}
+    <h1 className="text-4xl font-extrabold text-[#3E2723] text-center flex-1">
+      📖 CUENTOS
+    </h1>
+
+    {/* Botón Agregar cuento */}
+    {user?.role === "administrador" && (
+      <button
+        onClick={() => setShowModal(true)}
+        className="px-6 py-3 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition"
+      >
+        ➕ Agregar Cuento
+      </button>
+    )}
+  </div>
 
       {/* Secciones por Nivel */}
       {niveles.map((nivel) => {
@@ -176,7 +184,6 @@ export default function CuentosPage() {
                       {tale.tale_name}
                     </h2>
 
-                    {/* Candado si está completado */}
                     {tale.is_completed && (
                       <div className="absolute top-4 right-4 bg-[#6D4C41]/80 text-white rounded-full p-2 shadow-md">
                         <Lock size={20} />
@@ -219,18 +226,19 @@ export default function CuentosPage() {
                       >
                         {tale.is_completed ? "Completado" : "Ver Ejercicios"}
                       </Link>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm(`¿Eliminar el cuento "${tale.tale_name}"?`)) {
-                            EliminarCuento(tale.id_tale);
-                          }
-                        }}
-                        className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+                      {user?.role == "administrador" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`¿Eliminar el cuento "${tale.tale_name}"?`)) {
+                              EliminarCuento(tale.id_tale);
+                            }
+                          }}
+                          className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -240,7 +248,7 @@ export default function CuentosPage() {
         );
       })}
 
-      {/* Modal */}
+      {/* Modal (sin cambios) */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-[450px] animate-fadeIn">
@@ -274,7 +282,6 @@ export default function CuentosPage() {
               ))}
             </select>
 
-            {/* Input de archivo con vista previa */}
             <div className="mb-6">
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Imagen del cuento
