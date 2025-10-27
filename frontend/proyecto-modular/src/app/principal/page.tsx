@@ -144,7 +144,7 @@ const Index = () => {
             ]}
           />
           <p className="text-sm md:text-base mt-4 text-[#5D4037]">
-            Nivel predicho: <b>{prediccion.nivel_predicho}</b>
+            Nivel que puedes alcanzar:  <b>{prediccion.nivel_predicho}</b>
           </p>
         </div>
       )}

@@ -5,79 +5,76 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 import joblib
 
-# ======================================
-# CARGAR DATASET
-# ======================================
-df = pd.read_csv("usuarios.csv") 
-print("Datos cargados:", df.shape)
+from backend.database import query, engine
 
-# ======================================
-# LIMPIEZA DE DATOS
-# ======================================
-df = df.fillna(0)
+def train_model(df):
+    """Entrena y guarda el modelo usando nivel futuro como objetivo"""
 
-# Convertir etiquetas (niveles A1–C2) a valores numéricos
-label_encoder = LabelEncoder()
-df["nivel_encoded"] = label_encoder.fit_transform(df["nivel_actual"])
+    df = df.fillna(0)
 
-# ======================================
-# DEFINICIÓN DE VARIABLES (X, y)
-# ======================================
-X = df[[
-    "total_ejercicios",
-    "total_respuestas",
-    "promedio_aciertos",
-    "total_sesiones",
-    "tiempo_promedio_sesion",
-    "semanas_activas",
-    "tasa_mejora"
-]]
-y = df["nivel_encoded"]
+    # --- Codificar nivel actual ---
+    label_encoder = LabelEncoder()
+    df["nivel_encoded"] = label_encoder.fit_transform(df["nivel_actual"])
 
-# Escalado de variables
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+    # --- Crear métrica objetivo: nivel futuro ---
+    # Por ejemplo: si promedio_aciertos / semanas_activas > 0.1, sube 1 nivel
+    df["nivel_siguiente_encoded"] = df["nivel_encoded"] + (df["tasa_mejora"] > 0.1).astype(int)
 
+    # Asegurarnos que no se salga del rango
+    max_level = df["nivel_encoded"].max()
+    df["nivel_siguiente_encoded"] = df["nivel_siguiente_encoded"].clip(upper=max_level)
 
-X_train, X_test, y_train, y_test = train_test_split(
-    X_scaled, y, test_size=0.2, random_state=42
-)
+    # --- Variables predictoras ---
+    X = df[[
+        "total_ejercicios",
+        "total_respuestas",
+        "promedio_aciertos",
+        "total_sesiones",
+        "tiempo_promedio_sesion",
+        "semanas_activas",
+        "tasa_mejora"
+    ]]
 
-model = RandomForestClassifier(n_estimators=200, random_state=42)
-model.fit(X_train, y_train)
+    y = df["nivel_siguiente_encoded"]
 
+    # --- Escalado ---
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
 
-y_pred = model.predict(X_test)
-print("\n=== MATRIZ DE CONFUSIÓN ===")
-print(confusion_matrix(y_test, y_pred))
-print("\n=== REPORTE DE CLASIFICACIÓN ===")
-print(
-    classification_report(
-        y_test,
-        y_pred,
-        labels=range(len(label_encoder.classes_)),
-        target_names=label_encoder.classes_,
-        zero_division=0,
+    # --- Split ---
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_scaled, y, test_size=0.2, random_state=42
     )
-)
+
+    # --- Modelo ---
+    model = RandomForestClassifier(n_estimators=200, random_state=42)
+    model.fit(X_train, y_train)
+
+    # --- Evaluación ---
+    y_pred = model.predict(X_test)
+    print("\n=== MATRIZ DE CONFUSIÓN ===")
+    print(confusion_matrix(y_test, y_pred))
+    print("\n=== REPORTE DE CLASIFICACIÓN ===")
+    print(
+        classification_report(
+            y_test,
+            y_pred,
+            zero_division=0
+        )
+    )
+
+    # --- Guardar ---
+    import os
+    os.makedirs("ml", exist_ok=True)
+    joblib.dump(model, "ml/modelo_prediccion_nivel.pkl")
+    joblib.dump(scaler, "ml/scaler.pkl")
+    joblib.dump(label_encoder, "ml/label_encoder.pkl")
+    print("✅ Modelo entrenado y guardado correctamente.")
 
 
-joblib.dump(model, "ml/modelo_prediccion_nivel.pkl")
-joblib.dump(scaler, "ml/scaler.pkl")
-joblib.dump(label_encoder, "ml/label_encoder.pkl")
+def predict_user_progress(id_user: int, df, model, scaler, label_encoder):
+    """Predice el progreso de un usuario dado"""
 
-print("✅ Modelo entrenado y guardado correctamente.")
-
-# ======================================
-# FUNCIÓN DE PREDICCIÓN POR USUARIO
-# ======================================
-def predict_user_progress(
-    id_user: int,
-    df=df,
-    model=model,
-    scaler=scaler,
-    label_encoder=label_encoder,
-):
     user = df[df["id_user"] == id_user]
     if user.empty:
         return {"error": "Usuario no encontrado o sin datos suficientes"}

@@ -8,7 +8,7 @@ import joblib
 import pandas as pd
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-from backend.database import SessionLocal
+from backend.database import SessionLocal, get_user_data
 from .model_trainer import predict_user_progress
 from backend.models import Answer, Answer_Quiz, Excercise, Quiz, Tale, UserAnswer, UserAnswer_Quiz, UserModuleProgress, UserSessionHistory, Usuario, level_num
 from googletrans import Translator
@@ -456,13 +456,22 @@ def predict(id_user: int):
     Predice el posible nivel futuro del usuario según su desempeño.
     """
     try:
+        # 1️⃣ Cargar modelo y transformadores
         model = joblib.load("ml/modelo_prediccion_nivel.pkl")
         scaler = joblib.load("ml/scaler.pkl")
         label_encoder = joblib.load("ml/label_encoder.pkl")
-        df = pd.read_csv("usuarios.csv")
 
-        from .model_trainer import predict_user_progress
-        result = predict_user_progress(id_user, df=df, model=model, scaler=scaler, label_encoder=label_encoder)
+        # 2️⃣ Obtener los datos actualizados desde la BD
+        df = get_user_data()
+
+        # 3️⃣ Predecir con los datos actuales
+        result = predict_user_progress(
+            id_user,
+            df=df,
+            model=model,
+            scaler=scaler,
+            label_encoder=label_encoder
+        )
         return result
 
     except FileNotFoundError as e:

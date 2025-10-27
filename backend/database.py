@@ -17,21 +17,17 @@ SELECT
     u.id_user,
     u.name,
     u.assigned_level AS nivel_actual,
-
     COALESCE(ua_stats.total_ejercicios, 0) AS total_ejercicios,
     COALESCE(ua_stats.total_respuestas, 0) AS total_respuestas,
     COALESCE(ua_stats.promedio_aciertos, 0) AS promedio_aciertos,
-
     COALESCE(ush_stats.total_sesiones, 0) AS total_sesiones,
     COALESCE(ush_stats.tiempo_promedio_sesion, 0) AS tiempo_promedio_sesion,
     COALESCE(ush_stats.semanas_activas, 0) AS semanas_activas,
-
     CASE 
         WHEN COALESCE(ush_stats.semanas_activas, 0) > 0 
         THEN COALESCE(ua_stats.promedio_aciertos, 0) / ush_stats.semanas_activas
         ELSE 0
     END AS tasa_mejora
-
 FROM user u
 LEFT JOIN (
     SELECT 
@@ -43,7 +39,6 @@ LEFT JOIN (
     INNER JOIN answer a ON a.id_answer = ua.id_answer
     GROUP BY ua.id_user
 ) ua_stats ON ua_stats.id_user = u.id_user
-
 LEFT JOIN (
     SELECT 
         ush.id_user,
@@ -53,13 +48,9 @@ LEFT JOIN (
     FROM user_session_history ush
     GROUP BY ush.id_user
 ) ush_stats ON ush_stats.id_user = u.id_user
-
 WHERE u.assigned_level IS NOT NULL;
-
 """
 
-# Ejecutar query y guardar CSV
-df = pd.read_sql(query, engine)
-df = df.fillna(0)
-df.to_csv("usuarios.csv", index=False)
-print("✅ CSV generado correctamente: usuarios.csv")
+def get_user_data():
+    with engine.connect() as conn:
+        return pd.read_sql(query, conn)
