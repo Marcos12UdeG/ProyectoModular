@@ -15,7 +15,7 @@ export default function UserMenu() {
   console.log("Logout clicked");
 
   if (user?.id_session) {
-    fetch(`http://localhost:8000/logout/${user.id_session}`, { method: "POST" })
+    fetch(`https://storytellermodular.lat/api/logout/${user.id_session}`, { method: "POST" })
       .then(res => res.json())
       .then(data => console.log("Logout backend:", data))
       .catch(err => console.warn("No se pudo registrar logout, seguimos igual:", err));
@@ -34,7 +34,7 @@ export default function UserMenu() {
         className="relative w-15 h-15 bg-[#8B3E2F] text-white rounded-full shadow-lg hover:bg-[#A44C3B] transition overflow-visible flex items-center justify-center"
       >
         <img
-          src="/images/perfil.jpg"
+          {user?.name.chartAt[0]}         
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-13 w-13 rounded-full object-cover"
         />
       </button>
