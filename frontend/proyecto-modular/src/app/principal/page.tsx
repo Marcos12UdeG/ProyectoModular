@@ -61,67 +61,71 @@ const LandingCompact = () => {
     },
   ];
 
-  // Fetch predicción (igual que antes)
-  useEffect(() => {
-    if (!user?.id_user) {
-      setWelcomeMessage("Bienvenido — inicia sesión para ver tu progreso");
-      return;
-    }
-	
-    const fetchProgreso = async () => {
-    try{
-	const res = await fetch(`https://storytellermodular.lat/api/completados/${user?.id_user}`);
-	if (!res.ok) throw new Error ("Error al obtener el progreso");
-	const data = await res.json();
-	setProgreso(data.total_completados);
-    }catch(error){
-      console.error("Error al obtener cuentos leidos", error);
-    }
-    
-     const fetchPuntuaje = async () => {
-    try{
-	const res = await fetch(`https://storytellermodular.lat/api/puntuaje/${user?.id_user}`);
-	if (!res.ok) throw new Error ("Error al obtener el puntuaje");
-	const data = await res.json();
-	setPuntuaje(data.total_puntos);
-    }catch(error){
-      console.error("Error al obtener cuentos leidos", error);
-    }
-    setLoading(true);
-    const fetchUserPrediction = async () => {
-      try {
-        const res = await fetch(`https://storytellermodular.lat/api/predict/${user.id_user}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+ useEffect(() => {
+  if (!user?.id_user) {
+    setWelcomeMessage("Bienvenido — inicia sesión para ver tu progreso");
+    return;
+  }
 
-        if (data.error) {
-          setWelcomeMessage(`Bienvenido, ${user.name}. ${data.error}`);
-        } else {
-          setPrediccion(data);
-          setWelcomeMessage(`Bienvenido, ${user.name}`);
-        }
-      } catch (err) {
-        console.error("Error fetching prediction:", err);
-        setWelcomeMessage("Bienvenido. No se pudo obtener tu nivel.");
-      } finally {
-        setLoading(false);
+  const fetchProgreso = async () => {
+    try {
+      const res = await fetch(`https://storytellermodular.lat/api/completados/${user.id_user}`);
+      if (!res.ok) throw new Error("Error al obtener el progreso");
+      const data = await res.json();
+      setProgreso(data.total_completados);
+    } catch (error) {
+      console.error("Error al obtener cuentos leídos", error);
+    }
+  };
+
+  const fetchPuntuaje = async () => {
+    try {
+      const res = await fetch(`https://storytellermodular.lat/api/puntuaje/${user.id_user}`);
+      if (!res.ok) throw new Error("Error al obtener el puntuaje");
+      const data = await res.json();
+      setPuntuaje(data.total_puntos);
+    } catch (error) {
+      console.error("Error al obtener puntuaje", error);
+    }
+  };
+
+  const fetchUserPrediction = async () => {
+    try {
+      const res = await fetch(`https://storytellermodular.lat/api/predict/${user.id_user}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      if (data.error) {
+        setWelcomeMessage(`Bienvenido, ${user.name}. ${data.error}`);
+      } else {
+        setPrediccion(data);
+        setWelcomeMessage(`Bienvenido, ${user.name}`);
       }
-    };
-    fetchProgreso();
-    fetchPuntuaje();
-    fetchUserPrediction();
-  }, [user?.id_user, user?.name]);
+    } catch (err) {
+      console.error("Error fetching prediction:", err);
+      setWelcomeMessage("Bienvenido. No se pudo obtener tu nivel.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // 🔹 Ejecutamos las funciones
+  setLoading(true);
+  fetchProgreso();
+  fetchPuntuaje();
+  fetchUserPrediction();
+
+}, [user?.id_user, user?.name]);
   // Convierte nivel a valor para el velocímetro
   const nivelToValue = (nivel?: string) => {
-    const mapa: Record<string, number> = { A1: 18, A2: 36, B1: 56, B2: 76, C1: 96 };
+    const mapa: Record<string, number> = { A1: 16, A2: 32, B1: 48, B2: 64, C1: 80, C2: 96 };
     return nivel ? mapa[nivel] || 0 : 0;
   };
 
   // Stats mock (puedes reemplazar por datos reales)
   const stats = {
     storiesRead: progreso, // podrías cargarlo desde el backend
-    points: 0
+    points: puntuaje
   };
 
   return (
@@ -265,6 +269,7 @@ const LandingCompact = () => {
                     { text: "B1", color: "#333", fontSize: "10px" },
                     { text: "B2", color: "#333", fontSize: "10px" },
                     { text: "C1", color: "#333", fontSize: "10px" },
+		    { text: "C2", color: "#333", fontSize: "10px" },
                   ]}
                 />
               </div>
