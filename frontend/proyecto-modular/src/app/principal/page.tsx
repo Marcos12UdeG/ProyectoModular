@@ -34,6 +34,7 @@ const LandingCompact = () => {
   const [prediccion, setPrediccion] = useState<Prediccion | null>(null);
   const [loading, setLoading] = useState(false);
   const [progreso , setProgreso] = useState("");
+  const [puntuaje , setPuntuaje] = useState("");
 
   // Secciones actualizadas (sin "Lessons")
   const sections = [
@@ -67,7 +68,7 @@ const LandingCompact = () => {
       return;
     }
 	
-    const FetchProgreso = async () => {
+    const fetchProgreso = async () => {
     try{
 	const res = await fetch(`https://storytellermodular.lat/api/completados/${user?.id_user}`);
 	if (!res.ok) throw new Error ("Error al obtener el progreso");
@@ -76,7 +77,15 @@ const LandingCompact = () => {
     }catch(error){
       console.error("Error al obtener cuentos leidos", error);
     }
-
+    
+     const fetchPuntuaje = async () => {
+    try{
+	const res = await fetch(`https://storytellermodular.lat/api/puntuaje/${user?.id_user}`);
+	if (!res.ok) throw new Error ("Error al obtener el puntuaje");
+	const data = await res.json();
+	setPuntuaje(data.total_puntos);
+    }catch(error){
+      console.error("Error al obtener cuentos leidos", error);
     }
     setLoading(true);
     const fetchUserPrediction = async () => {
@@ -98,7 +107,8 @@ const LandingCompact = () => {
         setLoading(false);
       }
     };
-
+    fetchProgreso();
+    fetchPuntuaje();
     fetchUserPrediction();
   }, [user?.id_user, user?.name]);
 
