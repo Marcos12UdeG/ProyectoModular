@@ -16,7 +16,7 @@ export default function Home() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:8000/login", {
+      const res = await fetch("https://storytellermodular.lat/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -24,12 +24,12 @@ export default function Home() {
 
       if (!res.ok) {
         const err = await res.json();
-        setMensaje(`❌ ${err.detail}`);
+        setMensaje(`${err.detail}`);
         return;
       }
 
       const data = await res.json();
-      setMensaje(`✅ Bienvenido ${data.name}`);
+      setMensaje(`Bienvenido ${data.name}`);
 
       setUser(data);
 
@@ -38,7 +38,7 @@ export default function Home() {
       }, 1000);
     } catch (error) {
       console.error("Error al conectar al servidor", error);
-      setMensaje("❌ Error al conectar al servidor");
+      setMensaje("Error al conectar al servidor");
     }
   };
 
@@ -100,12 +100,12 @@ export default function Home() {
             </button>
 
             <p className="mt-6 text-center text-sm text-[#3E2723]">
-              Don&apos;t have an account?{" "}
+              No tienes cuenta?{" "}
               <span
                 onClick={() => router.push("/registro")}
                 className="text-[#6D4C41] hover:underline cursor-pointer transition font-medium"
               >
-                Sign Up
+                Registrate
               </span>
             </p>
           </form>

@@ -45,14 +45,14 @@ export default function CuentosPage() {
 
   const fetchTales = async () => {
     try {
-      const res = await fetch("http://localhost:8000/tales");
+      const res = await fetch("https://storytellermodular.lat/api/tales");
       const data = await res.json();
 
       const talesWithProgress = await Promise.all(
         data.map(async (tale: Tale) => {
           try {
             const res = await fetch(
-              `http://localhost:8000/progress/${user?.id_user}/${tale.id_tale}`
+              `https://storytellermodular.lat/api/progress/${user?.id_user}/${tale.id_tale}`
             );
             const progressData = await res.json();
             return { ...tale, is_completed: progressData.is_completed || false };
@@ -71,7 +71,7 @@ export default function CuentosPage() {
   // 🟤 Función para obtener el progreso general
   const fetchProgreso = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/completados/${user?.id_user}`);
+      const res = await fetch(`https://storytellermodular.lat/api/completados/${user?.id_user}`);
       if (!res.ok) throw new Error("Error al obtener el progreso");
       const data = await res.json();
       setProgreso(data);
@@ -82,7 +82,7 @@ export default function CuentosPage() {
 
   const EliminarCuento = async (id_tale: number) => {
     try {
-      const res = await fetch(`http://localhost:8000/taleseliminate/${id_tale}`, {
+      const res = await fetch(`https://storytellermodular.lat/api/taleseliminate/${id_tale}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Error al eliminar el cuento");
@@ -106,7 +106,7 @@ export default function CuentosPage() {
     formData.append("file", image);
 
     try {
-      const res = await fetch("http://localhost:8000/talescreate", {
+      const res = await fetch("https://storytellermodular.lat/api/talescreate", {
         method: "POST",
         body: formData,
       });

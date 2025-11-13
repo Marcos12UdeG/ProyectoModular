@@ -12,44 +12,35 @@ export default function UserMenu() {
   if (!user) return null;
 
   const handleLogout = () => {
-  console.log("Logout clicked");
+    console.log("Logout clicked");
 
-  if (user?.id_session) {
-    fetch(`https://storytellermodular.lat/api/logout/${user.id_session}`, { method: "POST" })
-      .then(res => res.json())
-      .then(data => console.log("Logout backend:", data))
-      .catch(err => console.warn("No se pudo registrar logout, seguimos igual:", err));
-  }
+    if (user?.id_session) {
+      fetch(`https://storytellermodular.lat/api/logout/${user.id_session}`, { method: "POST" })
+        .then(res => res.json())
+        .then(data => console.log("Logout backend:", data))
+        .catch(err => console.warn("No se pudo registrar logout, seguimos igual:", err));
+    }
 
-  setUser(null);
-  setOpen(false);
-  router.push("/");
-};
-
+    setUser(null);
+    setOpen(false);
+    router.push("/");
+  };
 
   return (
     <div className="fixed top-1 right-4 z-50">
       <button
         onClick={() => setOpen(!open)}
-        className="relative w-15 h-15 bg-[#8B3E2F] text-white rounded-full shadow-lg hover:bg-[#A44C3B] transition overflow-visible flex items-center justify-center"
+        className="relative w-14 h-14 bg-[#8B3E2F] text-white rounded-full shadow-lg hover:bg-[#A44C3B] transition flex items-center justify-center text-xl font-semibold"
       >
-        <img
-          {user?.name.chartAt[0]}         
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-13 w-13 rounded-full object-cover"
-        />
+        {user?.name?.charAt(0).toUpperCase()}
       </button>
 
       {open && (
         <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg p-4 flex flex-col gap-3 origin-top-right">
           <div className="flex flex-col items-center gap-1 border-b pb-2">
-            <p>{user.id_user}</p>
             <p className="font-semibold">{user.name}</p>
             <p className="text-sm text-gray-500">{user.email}</p>
           </div>
-
-          <button className="w-full bg-[#FDE2D3] text-[#8B3E2F] py-2 rounded-lg font-medium hover:bg-[#F8CBA6] transition">
-            Gestionar
-          </button>
 
           <button
             onClick={handleLogout}
@@ -62,3 +53,4 @@ export default function UserMenu() {
     </div>
   );
 }
+

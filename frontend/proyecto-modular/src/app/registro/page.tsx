@@ -18,12 +18,12 @@ export default function RegistroPage() {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      setMensaje("❌ Las contraseñas no coinciden");
+      setMensaje(" Las contraseñas no coinciden");
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:8000/create", {
+      const res = await fetch("https://storytellermodular.lat/api/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password,role }),
@@ -31,19 +31,19 @@ export default function RegistroPage() {
 
       if (!res.ok) {
         const err = await res.json();
-        setMensaje(`❌ ${err.detail}`);
+        setMensaje(` ${err.detail}`);
         return;
       }
 
       const data = await res.json();
-      setMensaje(`✅ Usuario ${data.name} creado correctamente`);
+      setMensaje(` Usuario ${data.name} creado correctamente`);
 
       setTimeout(() => {
         router.push("/");
       }, 1000);
     } catch (error) {
       console.error("Error al conectar al servidor", error);
-      setMensaje("❌ Error al conectar al servidor");
+      setMensaje(" Error al conectar al servidor");
     }
   };
 

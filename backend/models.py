@@ -49,7 +49,7 @@ class Tale(Base):
     tale_name = Column(String(50), nullable=False)
     content = Column(Text, nullable=False)
     level_type = Column(SQLEnum(level_num), nullable=False)
-
+    points = Column(Integer , nullable = True)
     excercises = relationship("Excercise", back_populates="tale")
     tale_progress = relationship("UserModuleProgress", back_populates="tale_table")
 

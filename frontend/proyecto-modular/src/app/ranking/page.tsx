@@ -45,9 +45,6 @@ export default function RankingPage() {
         >
           Tabla de Clasificación
         </motion.h1>
-        <p className="text-sm text-[#5a3f36] mt-2">
-          Los 10 mejores usuarios por puntaje total
-        </p>
       </header>
 
       {/* MAIN CONTENT */}

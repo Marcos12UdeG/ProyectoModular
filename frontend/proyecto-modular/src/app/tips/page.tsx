@@ -8,39 +8,39 @@ import UserMenu from "../usermenu/menu";
 const tips = [
   {
     icon: <BookOpen className="w-7 h-7 text-[#6D4C41]" />,
-    title: "Lee en inglés todos los días 📚",
+    title: "Read Short Stories",
     description:
-      "Empieza con historias cortas o artículos sencillos. Leer mejora tu vocabulario y comprensión de forma natural.",
+      "Reading short stories helps you understand grammar naturally and expand your vocabulary.",
   },
   {
     icon: <Headphones className="w-7 h-7 text-[#6D4C41]" />,
-    title: "Escucha y repite 🎧",
+    title: "Listen Every Day",
     description:
-      "Practica con podcasts o canciones. Escuchar diferentes acentos te ayuda a mejorar tu pronunciación.",
-  },
+      "Listen to English podcasts, audiobooks, or movies to improve your comprehension and pronunciation.",
+ },
   {
     icon: <MessageCircle className="w-7 h-7 text-[#6D4C41]" />,
-    title: "Habla sin miedo 💬",
+    title: "Speak Out Loud",
     description:
-      "Conversar, aunque cometas errores, es la mejor forma de ganar confianza. Usa apps o busca compañeros para practicar.",
+     "Even if you are alone, try to speak in English. Repeating phrases helps build confidence and fluency.",
   },
   {
     icon: <Film className="w-7 h-7 text-[#6D4C41]" />,
-    title: "Mira series o películas con subtítulos 🎬",
+    title: "Think in English",
     description:
-      "Aprende expresiones reales del día a día. Intenta ver sin subtítulos conforme mejores.",
+     "Try describing your surroundings or your thoughts in English to train your mind to think naturally in the language.",
   },
   {
     icon: <Clock className="w-7 h-7 text-[#6D4C41]" />,
-    title: "Sé constante ⏰",
+    title: "Practice with Others",
     description:
-      "Dedica al menos 15 minutos diarios. La práctica constante vale más que largas sesiones ocasionales.",
+     "Join language groups or find a study partner to practice real conversations and build confidence.",
   },
   {
     icon: <Globe className="w-7 h-7 text-[#6D4C41]" />,
-    title: "Cambia el idioma de tus dispositivos 🌍",
+    title: "Immerse Yourself",
     description:
-      "Configura tu celular o redes sociales en inglés. Así lo practicas sin darte cuenta en tu rutina diaria.",
+     "Change your phone, social media, and apps to English to stay surrounded by the language every day.",
   },
 ];
 

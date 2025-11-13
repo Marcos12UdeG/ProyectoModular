@@ -13,7 +13,7 @@ from .model_trainer import predict_user_progress
 from backend.models import Answer, Answer_Quiz, Excercise, Quiz, Tale, UserAnswer, UserAnswer_Quiz, UserModuleProgress, UserSessionHistory, Usuario, level_num
 from googletrans import Translator
 from datetime import datetime, timezone
-from sqlalchemy import func
+from sqlalchemy import func,desc
 
 # ---------------- Pydantic Schemas ----------------
 class UsuarioCreate(BaseModel):
@@ -546,3 +546,67 @@ def ObtenerProgresoUsuario(id_user: int, db: Session = Depends(get_db)):
         "total_cuentos": total_cuentos,
         "porcentaje": round(porcentaje, 2)
     }
+
+@router.get("/puntuaje/{id_user}")
+def ObtenerPuntuaje(id_user:int, db: Session = Depends(get_db)):
+
+    completados = (
+        db.query(UserModuleProgress)
+        .filter_by(id_user=id_user, is_completed=True)
+        .all()
+    )
+
+    if not completados:
+        raise HTTPException(status_code=404, detail="El usuario no tiene cuentos completados")
+
+
+    total_completados = len(completados)
+
+ 
+    total_cuentos = db.query(Tale).count()
+
+    if total_cuentos == 0:
+        raise HTTPException(status_code=404, detail="No hay cuentos disponibles")
+
+
+    total_puntos = (
+        db.query(func.sum(Tale.points))
+        .join(UserModuleProgress, Tale.id_tale == UserModuleProgress.id_tale)
+        .filter(UserModuleProgress.id_user == id_user, UserModuleProgress.is_completed == True)
+        .scalar()
+    ) or 0 
+
+    return {
+        "total_puntos": total_puntos
+    }
+
+
+@router.get("/ranking")
+def obtener_ranking(db: Session = Depends(get_db)):
+
+    ranking = (
+        db.query(
+            Usuario.id_user,
+            Usuario.name,
+            func.coalesce(func.sum(Tale.points), 0).label("total_puntos")
+        )
+        .join(UserModuleProgress, Usuario.id_user == UserModuleProgress.id_user)
+        .join(Tale, Tale.id_tale == UserModuleProgress.id_tale)
+        .filter(UserModuleProgress.is_completed == True)
+        .group_by(Usuario.id_user)
+        .order_by(desc("total_puntos"))
+        .limit(10)
+        .all()
+    )
+
+    if not ranking:
+        raise HTTPException(status_code=404, detail="No hay usuarios con progreso registrado")
+
+    return [
+        {
+            "id_user": r.id_user,
+            "nombre": r.name,
+            "puntos": r.total_puntos
+        }
+        for r in ranking
+    ]

@@ -30,7 +30,7 @@ export default function QuizPage() {
     const VerificarNivel = async () => {
       if (!user?.id_user) return
       try {
-        const res = await fetch(`http://localhost:8000/user/${user.id_user}/level`)
+        const res = await fetch(`https://storytellermodular.lat/api/user/${user.id_user}/level`)
         if (res.ok) {
           const data = await res.json()
           if (data?.Nivel) {
@@ -52,14 +52,14 @@ export default function QuizPage() {
   // 🔹 Cargar quizes y respuestas
   const ObtenerQuizes = async () => {
     try {
-      const res = await fetch("http://localhost:8000/quizes")
+      const res = await fetch("https://storytellermodular.lat/api/quizes")
       const data: Quiz[] = await res.json()
       setQuizes(data)
 
       const answersMap: Record<number, Answer_Quiz[]> = {}
       await Promise.all(
         data.map(async (quiz) => {
-          const resAns = await fetch(`http://localhost:8000/quiz/${quiz.id_quiz}/answer`)
+          const resAns = await fetch(`https://storytellermodular.lat/api/quiz/${quiz.id_quiz}/answer`)
           const ansData = await resAns.json()
           answersMap[quiz.id_quiz] = ansData.answers
         })
@@ -94,7 +94,7 @@ export default function QuizPage() {
       return
     }
 
-    const response = await fetch("http://localhost:8000/submit-quiz", {
+    const response = await fetch("https://storytellermodular.lat/api/submit-quiz", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id_user: user.id_user, answers }),

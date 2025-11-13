@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Pause, Play } from "lucide-react";
 import { useUser } from "../../context/UserContext";
+import { useRouter } from "next/navigation";
 
 interface Tale {
   id_tale: number;
@@ -39,11 +40,11 @@ export default function EjerciciosConCuentoPage() {
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [progress, setProgress] = useState(0);
-
+  const router = useRouter();
 
   const fetchTale = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/tales/${id_tale}`);
+      const res = await fetch(`https://storytellermodular.lat/api/tales/${id_tale}`);
       const data: Tale = await res.json();
       setTale(data);
     } catch (error) {
@@ -54,7 +55,7 @@ export default function EjerciciosConCuentoPage() {
 
   const fetchExcercises = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/tales/${id_tale}/excercises`);
+      const res = await fetch(`https://storytellermodular.lat/api/tales/${id_tale}/excercises`);
       const data: Excercise[] = await res.json();
       setExcercises(data);
     } catch (error) {
@@ -66,7 +67,7 @@ export default function EjerciciosConCuentoPage() {
   const checkCompletion = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`http://localhost:8000/progress/${user.id_user}/${id_tale}`);
+      const res = await fetch(`https://storytellermodular.lat/api/progress/${user.id_user}/${id_tale}`);
       const data = await res.json();
       setIsCompleted(data.is_completed);
     } catch (error) {
@@ -91,7 +92,7 @@ export default function EjerciciosConCuentoPage() {
 
     try {
 
-      const res = await fetch("http://localhost:8000/submit-excercise", {
+      const res = await fetch("https://storytellermodular.lat/api/submit-excercise", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -101,11 +102,11 @@ export default function EjerciciosConCuentoPage() {
       });
 
       if (!res.ok) throw new Error("Error al enviar respuestas");
-      setMessage("✅ Respuestas guardadas correctamente.");
-
+      setMessage("Respuestas guardadas correctamente.");
+      router.push("/cuentos");
 
       const scoreRes = await fetch(
-        `http://localhost:8000/evaluate-tale/${id_tale}?id_user=${user.id_user}`
+        `https://storytellermodular.lat/api/evaluate-tale/${id_tale}?id_user=${user.id_user}`
       );
       const data = await scoreRes.json();
       const score = data.score;
@@ -113,16 +114,16 @@ export default function EjerciciosConCuentoPage() {
       if (typeof score === "number") {
         if (score >= 60) {
           setIsCompleted(true);
-          setMessage(`🎉 Cuento completado con éxito (${score.toFixed(1)}%)`);
+          setMessage(`Cuento completado con éxito (${score.toFixed(1)}%)`);
         } else {
           setMessage(`Tu puntaje fue ${score.toFixed(1)}%. Intenta mejorar tus respuestas.`);
         }
       } else {
-        setMessage("❌ Error: respuesta del servidor inválida.");
+        setMessage("Error: respuesta del servidor inválida.");
       }
     } catch (error) {
       console.error(error);
-      setMessage("❌ Error al guardar o evaluar las respuestas.");
+      setMessage("Error al guardar o evaluar las respuestas.");
     } finally {
       setLoading(false);
     }
@@ -135,7 +136,7 @@ export default function EjerciciosConCuentoPage() {
     setProgress(0);
 
     try {
-      const res = await fetch("http://localhost:8000/traducir", {
+      const res = await fetch("https://storytellermodular.lat/api/traducir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto, destino: "en" }),
@@ -208,7 +209,7 @@ export default function EjerciciosConCuentoPage() {
                   className="relative flex items-center justify-center gap-3 w-full py-3 bg-[#FFB74D] text-white font-semibold rounded-xl shadow-lg hover:brightness-105 transition"
                 >
                   {isSpeaking ? <Pause size={22} /> : <Play size={22} />}
-                  <span>{isSpeaking ? "Pausar" : "Traducir y Leer"}</span>
+                  <span>{isSpeaking ? "Pausar" : "Traducir"}</span>
                 </button>
                 <div
                   className="absolute bottom-0 left-0 h-1 bg-green-400 rounded-r-xl transition-all"
@@ -223,11 +224,11 @@ export default function EjerciciosConCuentoPage() {
 
         {/* ------------------ Ejercicios ------------------ */}
         <div className="bg-white rounded-3xl shadow-xl p-6">
-          <h2 className="text-2xl font-bold text-[#3E2723] mb-6">📝 Ejercicios</h2>
+          <h2 className="text-2xl font-bold text-[#3E2723] mb-6">Ejercicios del cuento {tale.tale_name}</h2>
 
           {isCompleted ? (
             <p className="text-green-600 font-semibold text-lg">
-              ✅ Este cuento ya está completado.
+              Este cuento ya está completado.
             </p>
           ) : excercises.length > 0 ? (
             <>

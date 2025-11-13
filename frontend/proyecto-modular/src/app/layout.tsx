@@ -44,8 +44,6 @@ export default function RootLayout({
               {[
                 { name: "Inicio", href: "/principal" },
                 { name: "Cuentos", href: "/cuentos" },
-                { name: "Ejercicios", href: "/ejercicios" },
-                { name: "Grupos", href: "/grupos" },
               ].map((link) => (
                 <li key={link.name}>
                   <Link

@@ -118,7 +118,7 @@ const LandingCompact = () => {
 }, [user?.id_user, user?.name]);
   // Convierte nivel a valor para el velocímetro
   const nivelToValue = (nivel?: string) => {
-    const mapa: Record<string, number> = { A1: 16, A2: 32, B1: 48, B2: 64, C1: 80, C2: 96 };
+    const mapa: Record<string, number> = { A1: 20, A2: 40, B1: 60, B2: 80, C1: 100 };
     return nivel ? mapa[nivel] || 0 : 0;
   };
 
@@ -269,7 +269,6 @@ const LandingCompact = () => {
                     { text: "B1", color: "#333", fontSize: "10px" },
                     { text: "B2", color: "#333", fontSize: "10px" },
                     { text: "C1", color: "#333", fontSize: "10px" },
-		    { text: "C2", color: "#333", fontSize: "10px" },
                   ]}
                 />
               </div>
@@ -300,8 +299,8 @@ const LandingCompact = () => {
                     <Award className="h-5 w-5 text-[#b77b4b]" />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold">Insignias</div>
-                    <div className="text-xs text-[#6d4c41] opacity-90">Has ganado 2 insignias</div>
+                    <div className="text-sm font-semibold">Puntos</div>
+                    <div className="text-xs text-[#6d4c41] opacity-90">Has ganado {stats.points} puntos</div>
                   </div>
                 </div>
                 <div className="text-sm font-semibold text-[#6D4C41]">{stats.points} pts</div>
