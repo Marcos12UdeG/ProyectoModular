@@ -2,13 +2,21 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Pause, Play, Trash2 } from "lucide-react";
+import { Pause, Play, Trash2, Lock } from "lucide-react";
+import { useUser } from "../context/UserContext";
 
 interface Tale {
   id_tale: number;
   tale_name: string;
   content: string;
   level_type: string;
+  is_completed?: boolean;
+}
+
+interface Progreso {
+  total_completados: number;
+  total_cuentos: number;
+  porcentaje: number;
 }
 
 export default function CuentosPage() {
@@ -16,74 +24,70 @@ export default function CuentosPage() {
   const [synth, setSynth] = useState<SpeechSynthesis | null>(null);
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
-
+  const { user } = useUser();
   const [showModal, setShowModal] = useState(false);
   const [taleName, setTaleName] = useState("");
   const [content, setContent] = useState("");
   const [levelType, setLevelType] = useState("");
   const [image, setImage] = useState<File | null>(null);
 
+  const [progreso, setProgreso] = useState<Progreso | null>(null); // 🟤 Nuevo estado
+
   const niveles = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
   useEffect(() => {
     if (typeof window !== "undefined") setSynth(window.speechSynthesis);
-    fetchTales();
-  }, []);
+    if (user) {
+      fetchTales();
+      fetchProgreso(); // 🟤 Llamar progreso del usuario
+    }
+  }, [user]);
 
   const fetchTales = async () => {
     try {
-      const res = await fetch("http://localhost:8000/tales");
+      const res = await fetch("https://storytellermodular.lat/api/tales");
       const data = await res.json();
-      setTales(data);
+
+      const talesWithProgress = await Promise.all(
+        data.map(async (tale: Tale) => {
+          try {
+            const res = await fetch(
+              `https://storytellermodular.lat/api/progress/${user?.id_user}/${tale.id_tale}`
+            );
+            const progressData = await res.json();
+            return { ...tale, is_completed: progressData.is_completed || false };
+          } catch {
+            return { ...tale, is_completed: false };
+          }
+        })
+      );
+
+      setTales(talesWithProgress);
     } catch (error) {
       console.error("Error al obtener los cuentos", error);
     }
   };
 
-  const TraducirYLeer = async (texto: string) => {
-    if (!synth) return;
-    synth.cancel();
+  // 🟤 Función para obtener el progreso general
+  const fetchProgreso = async () => {
     try {
-      const res = await fetch("http://localhost:8000/traducir", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto, destino: "en" }),
-      });
+      const res = await fetch(`https://storytellermodular.lat/api/completados/${user?.id_user}`);
+      if (!res.ok) throw new Error("Error al obtener el progreso");
       const data = await res.json();
-      const utter = new SpeechSynthesisUtterance(data.traduccion);
-      utter.lang = "en-US";
-      utter.onend = () => {
-        setIsSpeaking(false);
-        utterRef.current = null;
-      };
-      utterRef.current = utter;
-      synth.speak(utter);
-      setIsSpeaking(true);
+      setProgreso(data);
     } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const PausarReanudar = () => {
-    if (!synth || !utterRef.current) return;
-    if (synth.speaking) {
-      if (!synth.paused) {
-        synth.pause();
-        setIsSpeaking(false);
-      } else {
-        synth.resume();
-        setIsSpeaking(true);
-      }
+      console.error("Error al obtener progreso general", error);
     }
   };
 
   const EliminarCuento = async (id_tale: number) => {
     try {
-      const res = await fetch(`http://localhost:8000/taleseliminate/${id_tale}`, {
+      const res = await fetch(`https://storytellermodular.lat/api/taleseliminate/${id_tale}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Error al eliminar el cuento");
       setTales((prevTales) => prevTales.filter((tale) => tale.id_tale !== id_tale));
+      fetchProgreso(); // 🟤 Actualiza progreso tras eliminar
     } catch (error) {
       console.error(error);
     }
@@ -102,13 +106,14 @@ export default function CuentosPage() {
     formData.append("file", image);
 
     try {
-      const res = await fetch("http://localhost:8000/talescreate", {
+      const res = await fetch("https://storytellermodular.lat/api/talescreate", {
         method: "POST",
         body: formData,
       });
       if (!res.ok) throw new Error("Error al guardar cuento");
 
       await fetchTales();
+      await fetchProgreso();
       setShowModal(false);
       setTaleName("");
       setContent("");
@@ -120,19 +125,41 @@ export default function CuentosPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center">
-      {/* Título centrado con botón a la derecha */}
-      <div className="flex justify-between items-center w-full max-w-7xl px-4 mt-6 mb-8">
-        <h1 className="text-4xl font-extrabold text-[#3E2723] text-center flex-1">
-          📖 CUENTOS
-        </h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-6 py-3 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition ml-4"
-        >
-          ➕ Agregar Cuento
-        </button>
+    <div className="min-h-screen w-full flex flex-col items-center bg-[#FFFDF9]">
+  {/* Título centrado con progreso a la izquierda y botón a la derecha */}
+  <div className="flex flex-col sm:flex-row justify-between items-center w-full max-w-7xl px-4 mt-8 mb-8 gap-4">
+    
+    {/* 🟤 Cajita de progreso */}
+    {progreso && (
+      <div className="bg-[#FFF8E1] border border-[#FFD54F] rounded-2xl px-6 py-4 shadow-md flex flex-col items-center text-[#5D4037] min-w-[200px]">
+        <p className="text-lg font-semibold">
+          {progreso.total_completados} / {progreso.total_cuentos}
+        </p>
+        <p className="text-sm text-[#8D6E63]">Completados</p>
+        <div className="w-48 bg-gray-300 h-2 rounded-full mt-2">
+          <div
+            className="h-2 bg-[#6D4C41] rounded-full transition-all duration-500"
+            style={{ width: `${progreso.porcentaje}%` }}
+          ></div>
+        </div>
       </div>
+    )}
+
+    {/* Título centrado */}
+    <h1 className="text-4xl font-extrabold text-[#3E2723] text-center flex-1">
+      📖 CUENTOS
+    </h1>
+
+    {/* Botón Agregar cuento */}
+    {user?.role === "administrador" && (
+      <button
+        onClick={() => setShowModal(true)}
+        className="px-6 py-3 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition"
+      >
+        ➕ Agregar Cuento
+      </button>
+    )}
+  </div>
 
       {/* Secciones por Nivel */}
       {niveles.map((nivel) => {
@@ -151,16 +178,24 @@ export default function CuentosPage() {
                 return (
                   <div
                     key={tale.id_tale}
-                    className="bg-white/95 rounded-3xl shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all p-6 flex flex-col justify-between"
+                    className="bg-white/95 rounded-3xl shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-all p-6 flex flex-col justify-between relative"
                   >
                     <h2 className="text-2xl font-bold text-[#4E342E] mb-2">
                       {tale.tale_name}
                     </h2>
-                    
+
+                    {tale.is_completed && (
+                      <div className="absolute top-4 right-4 bg-[#6D4C41]/80 text-white rounded-full p-2 shadow-md">
+                        <Lock size={20} />
+                      </div>
+                    )}
+
                     <img
                       src={imageUrl}
                       alt={tale.tale_name}
-                      className="w-full h-48 object-cover rounded-2xl mb-4 shadow-md"
+                      className={`w-full h-48 object-cover rounded-2xl mb-4 shadow-md ${
+                        tale.is_completed ? "opacity-50" : ""
+                      }`}
                     />
 
                     <p className="text-sm text-gray-700 mb-4 line-clamp-3">
@@ -175,23 +210,35 @@ export default function CuentosPage() {
 
                     <div className="flex gap-3 items-center">
                       <Link
-                        href={`/ejercicios/${tale.id_tale}`}
-                        className="flex-1 text-center py-2 bg-[#6D4C41] text-white rounded-xl hover:bg-[#4E342E] shadow-md transition"
-                      >
-                        Ver Ejercicios
-                      </Link>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm(`¿Eliminar el cuento "${tale.tale_name}"?`)) {
-                            EliminarCuento(tale.id_tale);
-                          }
+                        href={
+                          tale.is_completed
+                            ? "#"
+                            : `/ejercicios/${tale.id_tale}`
+                        }
+                        onClick={(e) => {
+                          if (tale.is_completed) e.preventDefault();
                         }}
-                        className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center"
+                        className={`flex-1 text-center py-2 rounded-xl shadow-md transition ${
+                          tale.is_completed
+                            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                            : "bg-[#6D4C41] text-white hover:bg-[#4E342E]"
+                        }`}
                       >
-                        <Trash2 size={20} />
-                      </button>
+                        {tale.is_completed ? "Completado" : "Ver Ejercicios"}
+                      </Link>
+                      {user?.role == "administrador" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`¿Eliminar el cuento "${tale.tale_name}"?`)) {
+                              EliminarCuento(tale.id_tale);
+                            }
+                          }}
+                          className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition flex items-center justify-center"
+                        >
+                          <Trash2 size={20} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -201,7 +248,7 @@ export default function CuentosPage() {
         );
       })}
 
-      {/* Modal */}
+      {/* Modal (sin cambios) */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-3xl shadow-2xl p-8 w-[450px] animate-fadeIn">
@@ -235,7 +282,6 @@ export default function CuentosPage() {
               ))}
             </select>
 
-            {/* Input de archivo con vista previa */}
             <div className="mb-6">
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Imagen del cuento

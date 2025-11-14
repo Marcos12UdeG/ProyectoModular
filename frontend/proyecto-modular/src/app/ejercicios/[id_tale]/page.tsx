@@ -1,8 +1,9 @@
 "use client";
-
 import { useParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Pause, Play } from "lucide-react";
+import { useUser } from "../../context/UserContext";
+import { useRouter } from "next/navigation";
 
 interface Tale {
   id_tale: number;
@@ -14,7 +15,6 @@ interface Tale {
 interface Answer {
   id_answer: number;
   answer_text: string;
-  is_correct?: boolean;
 }
 
 interface Excercise {
@@ -29,15 +29,21 @@ export default function EjerciciosConCuentoPage() {
   const { id_tale } = useParams<{ id_tale: string }>();
   const [tale, setTale] = useState<Tale | null>(null);
   const [excercises, setExcercises] = useState<Excercise[]>([]);
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number | null>>({});
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const { user } = useUser();
+
   const [synth, setSynth] = useState<SpeechSynthesis | null>(null);
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [progress, setProgress] = useState(0);
+  const router = useRouter();
 
-  // -------------------- Fetch cuento --------------------
   const fetchTale = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/tales/${id_tale}`);
+      const res = await fetch(`https://storytellermodular.lat/api/tales/${id_tale}`);
       const data: Tale = await res.json();
       setTale(data);
     } catch (error) {
@@ -45,14 +51,79 @@ export default function EjerciciosConCuentoPage() {
     }
   };
 
-  // -------------------- Fetch ejercicios --------------------
+
   const fetchExcercises = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/tales/${id_tale}/excercises`);
+      const res = await fetch(`https://storytellermodular.lat/api/tales/${id_tale}/excercises`);
       const data: Excercise[] = await res.json();
       setExcercises(data);
     } catch (error) {
       console.error("Error al obtener ejercicios", error);
+    }
+  };
+
+
+  const checkCompletion = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`https://storytellermodular.lat/api/progress/${user.id_user}/${id_tale}`);
+      const data = await res.json();
+      setIsCompleted(data.is_completed);
+    } catch (error) {
+      console.error("Error al revisar progreso", error);
+    }
+  };
+
+  const handleSubmitAnswers = async () => {
+    if (!user) return alert("Debes iniciar sesión");
+    setLoading(true);
+
+    const answersArray = Object.entries(selectedAnswers).map(([id_excercise, id_answer]) => ({
+      id_excercise: parseInt(id_excercise),
+      id_answer: id_answer!,
+    }));
+
+    if (answersArray.length !== excercises.length) {
+      alert("Responde todas las preguntas antes de enviar.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+
+      const res = await fetch("https://storytellermodular.lat/api/submit-excercise", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_user: user.id_user,
+          answers: answersArray,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Error al enviar respuestas");
+      setMessage("Respuestas guardadas correctamente.");
+
+      const scoreRes = await fetch(
+        `https://storytellermodular.lat/api/evaluate-tale/${id_tale}?id_user=${user.id_user}`
+      );
+      const data = await scoreRes.json();
+      const score = data.score;
+
+      if (typeof score === "number") {
+        if (score >= 60) {
+          setIsCompleted(true);
+          setMessage(`Cuento completado con éxito (${score.toFixed(1)}%)`);
+        } else {
+          setMessage(`Tu puntaje fue ${score.toFixed(1)}%. Intenta mejorar tus respuestas.`);
+        }
+      } else {
+        setMessage("Error: respuesta del servidor inválida.");
+      }
+    } catch (error) {
+      console.error(error);
+      setMessage("Error al guardar o evaluar las respuestas.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,7 +134,7 @@ export default function EjerciciosConCuentoPage() {
     setProgress(0);
 
     try {
-      const res = await fetch("http://localhost:8000/traducir", {
+      const res = await fetch("https://storytellermodular.lat/api/traducir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto, destino: "en" }),
@@ -71,16 +142,6 @@ export default function EjerciciosConCuentoPage() {
       const data = await res.json();
       const utter = new SpeechSynthesisUtterance(data.traduccion);
       utter.lang = "en-US";
-
-      // Actualiza barra de progreso por cada palabra leída
-      const words = data.traduccion.split(/\s+/);
-      let wordIndex = 0;
-      utter.onboundary = (event) => {
-        if (event.name === "word") {
-          wordIndex++;
-          setProgress((wordIndex / words.length) * 100);
-        }
-      };
 
       utter.onend = () => {
         setIsSpeaking(false);
@@ -112,8 +173,10 @@ export default function EjerciciosConCuentoPage() {
     if (typeof window !== "undefined") setSynth(window.speechSynthesis);
     fetchTale();
     fetchExcercises();
+    checkCompletion();
   }, [id_tale]);
 
+  // -------------------- Render --------------------
   return (
     <div className="min-h-screen w-full bg-gray-50 flex justify-center py-10">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 w-full max-w-7xl px-6">
@@ -121,20 +184,19 @@ export default function EjerciciosConCuentoPage() {
         <div className="bg-white rounded-3xl shadow-xl p-6 flex flex-col">
           {tale ? (
             <>
+              {/* Imagen del cuento */}
               <img
                 src={`/images/${tale.tale_name.replace(/\s+/g, "_").toLowerCase()}.jpg`}
                 alt={tale.tale_name}
                 className="w-full h-56 object-cover rounded-2xl mb-4 shadow-md"
               />
-              <h1 className="text-3xl font-bold text-[#4E342E] mb-3">
-                {tale.tale_name}
-              </h1>
+
+              <h1 className="text-3xl font-bold text-[#4E342E] mb-3">{tale.tale_name}</h1>
               <p className="text-gray-700 mb-4">{tale.content}</p>
               <p className="text-sm font-semibold text-[#6D4C41] mb-6">
                 Nivel: {tale.level_type}
               </p>
 
-              {/* Botón de lectura con barra de progreso */}
               <div className="relative w-full">
                 <button
                   onClick={() =>
@@ -145,10 +207,12 @@ export default function EjerciciosConCuentoPage() {
                   className="relative flex items-center justify-center gap-3 w-full py-3 bg-[#FFB74D] text-white font-semibold rounded-xl shadow-lg hover:brightness-105 transition"
                 >
                   {isSpeaking ? <Pause size={22} /> : <Play size={22} />}
-                  <span className="z-10">{isSpeaking ? "Pausar" : "Traducir y Leer"}</span>
+                  <span>{isSpeaking ? "Pausar" : "Traducir"}</span>
                 </button>
-                {/* Barra de progreso */}
-                <div className="absolute bottom-0 left-0 h-1 bg-green-400 rounded-r-xl transition-all" style={{ width: `${progress}%` }} />
+                <div
+                  className="absolute bottom-0 left-0 h-1 bg-green-400 rounded-r-xl transition-all"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
             </>
           ) : (
@@ -158,21 +222,52 @@ export default function EjerciciosConCuentoPage() {
 
         {/* ------------------ Ejercicios ------------------ */}
         <div className="bg-white rounded-3xl shadow-xl p-6">
-          <h2 className="text-2xl font-bold text-[#3E2723] mb-6">📝 Ejercicios</h2>
-          {excercises.length > 0 ? (
-            excercises.map((ej) => (
-              <div key={ej.id_excercise} className="mb-6 border-b border-gray-200 pb-4">
-                <h3 className="text-xl font-semibold text-[#5D4037] mb-2">{ej.excercise_name}</h3>
-                <p className="mb-3 text-gray-800">{ej.question}</p>
-                <ul className="space-y-2">
-                  {ej.answers.map((ans) => (
-                    <li key={ans.id_answer} className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 cursor-pointer">
-                      {ans.answer_text}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))
+          <h2 className="text-2xl font-bold text-[#3E2723] mb-6">
+  Ejercicios del cuento {tale?.tale_name || ""}
+</h2>
+          {isCompleted ? (
+            <p className="text-green-600 font-semibold text-lg">
+              Este cuento ya está completado.
+            </p>
+          ) : excercises.length > 0 ? (
+            <>
+              {excercises.map((ej) => (
+                <div key={ej.id_excercise} className="mb-6 border-b border-gray-200 pb-4">
+                  <h3 className="text-xl font-semibold text-[#5D4037] mb-2">
+                    {ej.excercise_name}
+                  </h3>
+                  <p className="mb-3 text-gray-800">{ej.question}</p>
+                  <ul className="space-y-2">
+                    {ej.answers.map((ans) => (
+                      <li
+                        key={ans.id_answer}
+                        onClick={() =>
+                          setSelectedAnswers((prev) => ({
+                            ...prev,
+                            [ej.id_excercise]: ans.id_answer,
+                          }))
+                        }
+                        className={`p-2 rounded-lg cursor-pointer border ${
+                          selectedAnswers[ej.id_excercise] === ans.id_answer
+                            ? "bg-[#FFB74D] text-white"
+                            : "bg-gray-100 hover:bg-gray-200"
+                        }`}
+                      >
+                        {ans.answer_text}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+              <button
+                onClick={handleSubmitAnswers}
+                disabled={loading}
+                className="w-full py-3 mt-4 bg-[#6D4C41] text-white rounded-xl shadow-md hover:bg-[#4E342E] transition"
+              >
+                {loading ? "Enviando..." : "Enviar respuestas"}
+              </button>
+              {message && <p className="mt-4 text-center text-sm text-gray-700">{message}</p>}
+            </>
           ) : (
             <p>No hay ejercicios disponibles.</p>
           )}

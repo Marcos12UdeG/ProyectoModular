@@ -8,18 +8,19 @@ import joblib
 import pandas as pd
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
-from backend.database import SessionLocal
+from backend.database import SessionLocal, get_user_data
 from .model_trainer import predict_user_progress
-from backend.models import Answer, Answer_Quiz, Excercise, Quiz, Tale, UserAnswer, UserAnswer_Quiz, UserSessionHistory, Usuario, level_num
+from backend.models import Answer, Answer_Quiz, Excercise, Quiz, Tale, UserAnswer, UserAnswer_Quiz, UserModuleProgress, UserSessionHistory, Usuario, level_num
 from googletrans import Translator
 from datetime import datetime, timezone
-from sqlalchemy import func
+from sqlalchemy import func,desc
 
 # ---------------- Pydantic Schemas ----------------
 class UsuarioCreate(BaseModel):
     name: str
     password: str
     email: EmailStr
+    role:str
 
 class UsuarioRead(BaseModel):
     id_user: int
@@ -27,7 +28,8 @@ class UsuarioRead(BaseModel):
     password: str
     email: EmailStr
     id_session: int | None = None
-
+    role:str
+    
     model_config = {"from_attributes": True}
 
 class LoginRequest(BaseModel):
@@ -82,7 +84,7 @@ class SubmitExerciseAnswer(BaseModel):
     id_excercise: int
     id_answer: int
 
-class SubmitExercise(BaseModel):
+class SubmitExerciseA(BaseModel):
     id_user: int
     answers: List[SubmitExerciseAnswer]
 
@@ -161,6 +163,8 @@ def crear_usuario(request: UsuarioCreate, db: Session = Depends(get_db)):
         name=request.name,
         password=request.password,
         email=request.email,
+        role= request.role,
+        
     )
     db.add(new_user)
     db.commit()
@@ -182,17 +186,17 @@ def crear_cuento(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-    # Guardar imagen en /public/images/nombre_del_cuento.jpg
+
     filename = tale_name.replace(" ", "_").lower() + ".jpg"
     file_path = os.path.join(UPLOAD_DIR, filename)
 
-    # Crear carpeta si no existe
+
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Guardar en base de datos
+
     new_tale = Tale(
         tale_name=tale_name,
         content=content,
@@ -341,15 +345,16 @@ def verificar_usuario(request: LoginRequest, db: Session = Depends(get_db)):
         name=user.name,
         password=user.password,
         email=user.email,
-        id_session=new_session.id_session
+        id_session=new_session.id_session,
+        role = user.role
     )
 
 # ------------------------------------------------------------------------------------------
 
 #Respuestas Usuario
 
-@router.post("/submit-exercise")
-def submit_exercise(request: SubmitExercise, db: Session = Depends(get_db)):
+@router.post("/submit-excercise")
+def submit_exercise(request: SubmitExerciseA, db: Session = Depends(get_db)):
     """
     Guarda las respuestas de un usuario para múltiples ejercicios.
     """
@@ -437,7 +442,6 @@ def obtener_quiz(id_quiz: int, db: Session = Depends(get_db)):
 
     return quiz_con_respuestas
 
-
 @router.get("/quizes")
 def ObtenerQuizes(db:Session = Depends(get_db)):
     quizes = db.query(Quiz).all()
@@ -448,5 +452,161 @@ def ObtenerQuizes(db:Session = Depends(get_db)):
 
 @router.get("/predict/{id_user}")
 def predict(id_user: int):
+    """
+    Predice el posible nivel futuro del usuario según su desempeño.
+    """
+    try:
+        # 1️⃣ Cargar modelo y transformadores
+        model = joblib.load("ml/modelo_prediccion_nivel.pkl")
+        scaler = joblib.load("ml/scaler.pkl")
+        label_encoder = joblib.load("ml/label_encoder.pkl")
 
-    return predict_user_progress(id_user)
+        # 2️⃣ Obtener los datos actualizados desde la BD
+        df = get_user_data()
+
+        # 3️⃣ Predecir con los datos actuales
+        result = predict_user_progress(
+            id_user,
+            df=df,
+            model=model,
+            scaler=scaler,
+            label_encoder=label_encoder
+        )
+        return result
+
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=500, detail=f"Archivo no encontrado: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error en la predicción: {e}")
+
+
+
+@router.get("/evaluate-tale/{id_tale}")
+def EvaluarCuento(id_tale: int, id_user: int, db: Session = Depends(get_db)):
+
+    total_ejercicios = db.query(Excercise).filter(Excercise.id_tale == id_tale).count()
+
+    if total_ejercicios == 0:
+        raise HTTPException(status_code=400, detail="Este cuento no tiene ejercicios")
+
+    correct_answer = (
+        db.query(UserAnswer)
+        .join(Answer, Answer.id_answer == UserAnswer.id_answer)
+        .join(Excercise, Excercise.id_excercise == UserAnswer.id_excercise)
+        .filter(
+            UserAnswer.id_user == id_user,
+            Excercise.id_tale == id_tale,
+            Answer.is_correct == True
+        )
+        .count()
+    )
+
+    score = (correct_answer / total_ejercicios) * 100
+
+    progress = db.query(UserModuleProgress).filter_by(id_user=id_user, id_tale=id_tale).first()
+    
+    if not progress:
+        progress = UserModuleProgress(id_user=id_user, id_tale=id_tale)
+        db.add(progress)
+    
+
+    if score >= 60:
+        progress.is_completed = True
+        progress.completion_date = datetime.now(timezone.utc)
+        db.commit()
+        return {"status": "completed", "score": score}
+    else:
+        db.commit()
+        return {"status": "failed", "score": score}
+
+@router.get("/progress/{id_user}/{id_tale}")
+def get_progress(id_user: int, id_tale: int, db: Session = Depends(get_db)):
+    progress = db.query(UserModuleProgress).filter_by(id_user=id_user, id_tale=id_tale).first()
+    return {"is_completed": bool(progress and progress.is_completed)}
+
+
+@router.get("/completados/{id_user}")
+def ObtenerProgresoUsuario(id_user: int, db: Session = Depends(get_db)):
+
+    total_completados = db.query(UserModuleProgress).filter_by(id_user=id_user).count()
+
+    if not total_completados:
+        raise HTTPException(status_code=404 , detail="No existe el usuario")
+
+    total_cuentos = db.query(Tale).count()
+    if total_cuentos == 0:
+        raise HTTPException(status_code=404, detail="No hay cuentos disponibles")
+
+
+    porcentaje = (total_completados / total_cuentos) * 100 if total_cuentos > 0 else 0
+
+    return {
+        "id_user": id_user,
+        "total_completados": total_completados,
+        "total_cuentos": total_cuentos,
+        "porcentaje": round(porcentaje, 2)
+    }
+
+@router.get("/puntuaje/{id_user}")
+def ObtenerPuntuaje(id_user:int, db: Session = Depends(get_db)):
+
+    completados = (
+        db.query(UserModuleProgress)
+        .filter_by(id_user=id_user, is_completed=True)
+        .all()
+    )
+
+    if not completados:
+        raise HTTPException(status_code=404, detail="El usuario no tiene cuentos completados")
+
+
+    total_completados = len(completados)
+
+ 
+    total_cuentos = db.query(Tale).count()
+
+    if total_cuentos == 0:
+        raise HTTPException(status_code=404, detail="No hay cuentos disponibles")
+
+
+    total_puntos = (
+        db.query(func.sum(Tale.points))
+        .join(UserModuleProgress, Tale.id_tale == UserModuleProgress.id_tale)
+        .filter(UserModuleProgress.id_user == id_user, UserModuleProgress.is_completed == True)
+        .scalar()
+    ) or 0 
+
+    return {
+        "total_puntos": total_puntos
+    }
+
+
+@router.get("/ranking")
+def obtener_ranking(db: Session = Depends(get_db)):
+
+    ranking = (
+        db.query(
+            Usuario.id_user,
+            Usuario.name,
+            func.coalesce(func.sum(Tale.points), 0).label("total_puntos")
+        )
+        .join(UserModuleProgress, Usuario.id_user == UserModuleProgress.id_user)
+        .join(Tale, Tale.id_tale == UserModuleProgress.id_tale)
+        .filter(UserModuleProgress.is_completed == True)
+        .group_by(Usuario.id_user)
+        .order_by(desc("total_puntos"))
+        .limit(10)
+        .all()
+    )
+
+    if not ranking:
+        raise HTTPException(status_code=404, detail="No hay usuarios con progreso registrado")
+
+    return [
+        {
+            "id_user": r.id_user,
+            "nombre": r.name,
+            "puntos": r.total_puntos
+        }
+        for r in ranking
+    ]

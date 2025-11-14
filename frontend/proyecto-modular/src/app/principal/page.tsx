@@ -1,123 +1,323 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { BookOpen, BookMarked } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import UserMenu from "../usermenu/menu";
+import { motion } from "framer-motion";
+import {
+  BookMarked,
+  FileText,
+  Zap,
+  Award,
+  User,
+  ChevronRight,
+} from "lucide-react";
 import { useUser } from "../context/UserContext";
+import ReactSpeedometer from "react-d3-speedometer";
+import UserMenu from "../usermenu/menu";
 
-const Index = () => {
+interface Prediccion {
+  id_user: number;
+  mensaje?: string;
+  nivel_actual: string;
+  nivel_predicho: string;
+}
+
+// --------- Diseño: Compacto, moderno y con microinteracciones ---------
+// Recomendación: tener instaladas las dependencias:
+// npm i react-d3-speedometer framer-motion lucide-react
+// ---------------------------------------------------------------------
+
+const LandingCompact = () => {
   const { user } = useUser();
   const [welcomeMessage, setWelcomeMessage] = useState("Cargando...");
-  const [prediccion, setPrediccion] = useState<any>(null);
+  const [prediccion, setPrediccion] = useState<Prediccion | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [progreso , setProgreso] = useState("");
+  const [puntuaje , setPuntuaje] = useState("");
 
+  // Secciones actualizadas (sin "Lessons")
   const sections = [
     {
       title: "Stories",
-      text: "Fascinating tales to practice your English. Improve while having fun!",
+      text: "Historias para practicar inglés de forma natural y entretenida.",
       icon: BookMarked,
       link: "/cuentos",
+      tag: "Lectura",
     },
     {
-      title: "Lessons",
-      text: "Learn step by step with short, interactive lessons.",
-      icon: BookOpen,
-      link: "/ejercicios", // link base, añadiremos ID dinámico
+      title: "Tips",
+      text: "Trucos rápidos para mejorar vocabulario y pronunciación.",
+      icon: FileText,
+      link: "/tips",
+      tag: "Consejos",
+    },
+    {
+      title: "Ranking",
+      text: "Compite con otros estudiantes y sube en la tabla de clasificación.",
+      icon: Award,
+      link: "/ranking",
+      tag: "Competir",
     },
   ];
 
-  // ===============================
-  // Fetch predicción del usuario
-  // ===============================
-  useEffect(() => {
-    if (!user?.id_user) return;
+ useEffect(() => {
+  if (!user?.id_user) {
+    setWelcomeMessage("Bienvenido — inicia sesión para ver tu progreso");
+    return;
+  }
 
-    const fetchUserData = async () => {
-      try {
-        const res = await fetch(`http://localhost:8000/predict/${user.id_user}`);
-        const data = await res.json();
+  const fetchProgreso = async () => {
+    try {
+      const res = await fetch(`https://storytellermodular.lat/api/completados/${user.id_user}`);
+      if (!res.ok) throw new Error("Error al obtener el progreso");
+      const data = await res.json();
+      setProgreso(data.total_completados);
+    } catch (error) {
+      console.error("Error al obtener cuentos leídos", error);
+    }
+  };
 
-        if (data.error) {
-          setWelcomeMessage("Bienvenido. Nivel no asignado");
-        } else {
-          setPrediccion(data);
-          setWelcomeMessage(`Bienvenido, ${user.name}. Tu nivel actual es ${data.nivel_actual}`);
-        }
-      } catch (error) {
-        console.error("Error al obtener predicción:", error);
-        setWelcomeMessage("Bienvenido. Nivel no asignado");
+  const fetchPuntuaje = async () => {
+    try {
+      const res = await fetch(`https://storytellermodular.lat/api/puntuaje/${user.id_user}`);
+      if (!res.ok) throw new Error("Error al obtener el puntuaje");
+      const data = await res.json();
+      setPuntuaje(data.total_puntos);
+    } catch (error) {
+      console.error("Error al obtener puntuaje", error);
+    }
+  };
+
+  const fetchUserPrediction = async () => {
+    try {
+      const res = await fetch(`https://storytellermodular.lat/api/predict/${user.id_user}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      if (data.error) {
+        setWelcomeMessage(`Bienvenido, ${user.name}. ${data.error}`);
+      } else {
+        setPrediccion(data);
+        setWelcomeMessage(`Bienvenido, ${user.name}`);
       }
-    };
+    } catch (err) {
+      console.error("Error fetching prediction:", err);
+      setWelcomeMessage("Bienvenido. No se pudo obtener tu nivel.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchUserData();
-  }, [user?.id_user]);
+  // 🔹 Ejecutamos las funciones
+  setLoading(true);
+  fetchProgreso();
+  fetchPuntuaje();
+  fetchUserPrediction();
+
+}, [user?.id_user, user?.name]);
+  // Convierte nivel a valor para el velocímetro
+  const nivelToValue = (nivel?: string) => {
+    const mapa: Record<string, number> = { A1: 20, A2: 40, B1: 60, B2: 80, C1: 100 };
+    return nivel ? mapa[nivel] || 0 : 0;
+  };
+
+  // Stats mock (puedes reemplazar por datos reales)
+  const stats = {
+    storiesRead: progreso, // podrías cargarlo desde el backend
+    points: puntuaje
+  };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center bg-white px-4">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row items-center justify-center gap-4 mt-10 mb-12">
-        <div className="h-20 w-20 md:h-24 md:w-24 rounded-full overflow-hidden shadow-lg border-4 border-[#6D4C41]">
-          <Image
-            src="/images/logo.jpg"
-            alt="Storyteller Logo"
-            width={100}
-            height={100}
-            className="object-cover"
-          />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-extrabold text-[#3E2723] tracking-wide text-center md:text-left">
-          STORYTELLER
-        </h1>
-      </header>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#fffaf5] to-[#f3e6d9] text-[#3b2a25]">
+      {/* CONTENT: compact grid */}
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 md:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Left: Welcome + small insights */}
+          <div className="lg:col-span-7 order-2 lg:order-1">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="rounded-2xl p-6 bg-white/70 backdrop-blur-md border border-white/30 shadow"
+            >
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold leading-tight">
+                    {welcomeMessage}
+                  </h2>
+                  <p className="text-sm md:text-base text-[#5a3f36] mt-2">
+                    {prediccion
+                      ? `Nivel actual: ${prediccion.nivel_actual} · Próximo objetivo: ${prediccion.nivel_predicho}`
+                      : "Accede a tu progreso personalizado para ver metas y recomendaciones."}
+                  </p>
+                </div>
 
-      {/* Mensaje de bienvenida */}
-      <p className="text-lg mb-6 font-bold text-[#6D4C41]">{welcomeMessage}</p>
-
-      {/* Predicción */}
-      {prediccion && (
-        <div className="p-6 bg-pink-50 rounded-2xl shadow-md mb-8 w-full max-w-3xl">
-          <h2 className="text-xl font-bold text-pink-700">✨ Predicción de Progreso ✨</h2>
-          {prediccion.mensaje && <p className="mt-2 text-gray-700">{prediccion.mensaje}</p>}
-          <p className="text-sm mt-1">
-            Nivel actual: <b>{prediccion.nivel_actual}</b>
-          </p>
-          <p className="text-sm">
-            Nivel estimado: <b>{prediccion.nivel_predicho}</b>
-          </p>
-        </div>
-      )}
-
-      {/* Secciones */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 w-full max-w-6xl mb-12">
-        {sections.map((section, index) => {
-          // Link dinámico para Lessons
-          const href =
-            section.title === "Lessons"
-              ? `/ejercicios/${prediccion?.nivel_actual || "1"}`
-              : section.link;
-
-          return (
-            <Link key={index} href={href}>
-              <div className="cursor-pointer bg-[#6D4C41] text-white p-8 rounded-3xl shadow-2xl hover:shadow-[0_8px_30px_rgba(0,0,0,0.25)] hover:scale-105 transition-all flex flex-col items-center text-center">
-                <section.icon className="h-8 w-8 mb-2" />
-                <h3 className="text-xl font-bold mb-2 uppercase">{section.title}</h3>
-                <p className="text-sm md:text-base leading-snug">{section.text}</p>
+                {/* Quick stats compact */}
+                <div className="flex gap-3 items-center">
+                  <div className="px-3 py-2 rounded-lg bg-[#fff6ec] border border-[#f0decd] text-center">
+                    <div className="text-sm text-[#5D4037]">Historias</div>
+                    <div className="font-semibold text-lg">{stats.storiesRead}</div>
+                  </div>
+                  <div className="px-3 py-2 rounded-lg bg-[#fff6ec] border border-[#f0decd] text-center">
+                    <div className="text-sm text-[#5D4037]">Puntos</div>
+                    <div className="font-semibold text-lg">{stats.points}</div>
+                  </div>
+                </div>
               </div>
-            </Link>
-          );
-        })}
-      </div>
 
-      {/* Estadísticas y menú */}
-      <div className="flex flex-wrap justify-center gap-6 text-sm md:text-base text-[#3E2723] font-medium mt-4 mb-12">
-        <span>✔️ 50+ Lecciones</span>
-        <span>📖 15 Historias</span>
-        <span>👥 200 Estudiantes</span>
-        <UserMenu />
-      </div>
+              {/* Horizontal separator */}
+              <div className="my-4 border-t border-[#eee7e1]" />
+
+              {/* Small tips / CTA */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/cuentos" className="flex-1">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    className="w-full py-3 rounded-lg bg-[#6D4C41] text-white font-semibold shadow-sm"
+                  >
+                    Leer historias ahora
+                  </motion.button>
+                </Link>
+
+                <Link href="/tips" className="flex-1">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    className="w-full py-3 rounded-lg bg-white border border-[#e6d9cf] font-semibold"
+                  >
+                    Ver tips rápidos
+                  </motion.button>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Grid de tarjetas compactas */}
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {sections.map((sec, i) => {
+                // compact card
+                const Icon = sec.icon;
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.05 * i }}
+                  >
+                    <Link href={sec.link}>
+                      <div className="group bg-white/85 hover:scale-[1.02] transition-transform rounded-lg p-4 border border-white/30 shadow-sm flex items-start gap-4">
+                        <div className="h-12 w-12 rounded-lg bg-[#6D4C41]/10 grid place-items-center text-[#6D4C41]">
+                          <Icon className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-[#3b2a25]">{sec.title}</h3>
+                            <span className="text-xs bg-[#f3e6d9] px-2 py-1 rounded-full">{sec.tag}</span>
+                          </div>
+                          <p className="text-sm mt-1 text-[#5a3f36] opacity-90 leading-tight">
+                            {sec.text}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right: Card con velocímetro y detalles (compacto) */}
+          <aside className="lg:col-span-5 order-1 lg:order-2">
+            <motion.div
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.35 }}
+              className="rounded-2xl p-5 bg-white/80 backdrop-blur-md border border-white/30 shadow-lg sticky top-6"
+            >
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-lg bg-[#6D4C41] grid place-items-center text-white">
+                    <BookMarked className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-sm text-[#5D4037]">Progreso estimado</div>
+                    <div className="font-semibold text-lg">{prediccion ? prediccion.nivel_actual : "—"}</div>
+                  </div>
+                </div>
+
+                <div className="text-right text-xs text-[#5a3f36]">
+                  <div>Meta: {prediccion ? prediccion.nivel_predicho : "—"}</div>
+                  <div className="opacity-80">Última evaluación: {prediccion ? "reciente" : "—"}</div>
+                </div>
+              </div>
+
+              {/* Velocímetro compacto */}
+              <div className="flex justify-center">
+                <ReactSpeedometer
+                  maxValue={100}
+                  value={nivelToValue(prediccion?.nivel_predicho)}
+                  segments={5}
+                  ringWidth={22}
+                  needleColor="#6D4C41"
+                  startColor="#C8E6C9"
+                  endColor="#FF8A65"
+                  width={280}
+                  height={170}
+                  textColor="#3b2a25"
+                  customSegmentLabels={[
+                    { text: "A1", color: "#333", fontSize: "10px" },
+                    { text: "A2", color: "#333", fontSize: "10px" },
+                    { text: "B1", color: "#333", fontSize: "10px" },
+                    { text: "B2", color: "#333", fontSize: "10px" },
+                    { text: "C1", color: "#333", fontSize: "10px" },
+                  ]}
+                />
+              </div>
+
+              {/* CTA pequeño y nota */}
+              <div className="mt-4 text-center">
+                <Link href="/cuentos">
+                  <motion.button whileHover={{ scale: 1.03 }} className="py-2 px-4 rounded-lg bg-[#6D4C41] text-white font-medium shadow-sm">
+                    Seguir practicando
+                  </motion.button>
+                </Link>
+                <p className="text-xs text-[#5a3f36] mt-3 opacity-90">
+                  Sugerencia: lee 1 historia diaria para mejorar comprensión y vocabulario.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Pequeña tarjeta de logros */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.06 }}
+              className="mt-4 p-4 rounded-xl bg-white/70 border border-white/30 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-md bg-[#fff6ec] grid place-items-center">
+                    <Award className="h-5 w-5 text-[#b77b4b]" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold">Puntos</div>
+                    <div className="text-xs text-[#6d4c41] opacity-90">Has ganado {stats.points} puntos</div>
+                  </div>
+                </div>
+                <div className="text-sm font-semibold text-[#6D4C41]">{stats.points} pts</div>
+              </div>
+            </motion.div>
+          </aside>
+        </div>
+      </main>
+
+      {/* Footer compacto */}
+      <footer className="py-4 border-t border-[#efe1d8] text-center text-sm text-[#6d4c41]">
+          <div className="mt-2 opacity-80">© {new Date().getFullYear()} Storyteller</div>
+      </footer>
+     <UserMenu />
     </div>
   );
 };
 
-export default Index;
+export default LandingCompact;
+
