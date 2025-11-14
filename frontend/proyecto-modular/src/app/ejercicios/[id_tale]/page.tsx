@@ -1,5 +1,4 @@
 "use client";
-
 import { useParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { Pause, Play } from "lucide-react";
@@ -103,7 +102,6 @@ export default function EjerciciosConCuentoPage() {
 
       if (!res.ok) throw new Error("Error al enviar respuestas");
       setMessage("Respuestas guardadas correctamente.");
-      router.push("/cuentos");
 
       const scoreRes = await fetch(
         `https://storytellermodular.lat/api/evaluate-tale/${id_tale}?id_user=${user.id_user}`
@@ -224,8 +222,9 @@ export default function EjerciciosConCuentoPage() {
 
         {/* ------------------ Ejercicios ------------------ */}
         <div className="bg-white rounded-3xl shadow-xl p-6">
-          <h2 className="text-2xl font-bold text-[#3E2723] mb-6">Ejercicios del cuento {tale.tale_name}</h2>
-
+          <h2 className="text-2xl font-bold text-[#3E2723] mb-6">
+  Ejercicios del cuento {tale?.tale_name || ""}
+</h2>
           {isCompleted ? (
             <p className="text-green-600 font-semibold text-lg">
               Este cuento ya está completado.
