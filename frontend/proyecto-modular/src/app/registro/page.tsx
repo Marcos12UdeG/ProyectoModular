@@ -12,39 +12,41 @@ export default function RegistroPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [role, setRole] = useState("")
 
   const Registro = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
-      setMensaje("❌ Las contraseñas no coinciden");
+      setMensaje(" Las contraseñas no coinciden");
       return;
     }
 
     try {
-      const res = await fetch("http://localhost:8000/create", {
+      const res = await fetch("https://storytellermodular.lat/api/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password,role }),
       });
 
       if (!res.ok) {
         const err = await res.json();
-        setMensaje(`❌ ${err.detail}`);
+        setMensaje(` ${err.detail}`);
         return;
       }
 
       const data = await res.json();
-      setMensaje(`✅ Usuario ${data.name} creado correctamente`);
+      setMensaje(` Usuario ${data.name} creado correctamente`);
 
       setTimeout(() => {
         router.push("/");
       }, 1000);
     } catch (error) {
       console.error("Error al conectar al servidor", error);
-      setMensaje("❌ Error al conectar al servidor");
+      setMensaje(" Error al conectar al servidor");
     }
   };
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-white px-4">
@@ -97,6 +99,21 @@ export default function RegistroPage() {
                 className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#6D4C41] outline-none transition text-sm"
                 required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-[#4E342E]">
+                Rol
+              </label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#6D4C41] outline-none transition text-sm bg-white"
+                required
+              >
+                <option value="">Selecciona un rol</option>
+                <option value="usuario">Usuario</option>
+              </select>
             </div>
 
             {/* Password */}
