@@ -1,9 +1,5 @@
-
-from sqlalchemy import Column, Integer, String, Text, Enum as SQLEnum, ForeignKey, Boolean
-
 from datetime import datetime, timezone
 from sqlalchemy import TIMESTAMP, Column, Integer, String, Text, Enum as SQLEnum, ForeignKey, Boolean
-
 from backend.database import Base
 from enum import Enum
 from sqlalchemy.orm import relationship
@@ -27,10 +23,8 @@ class Role(str, Enum):
     usuario = "usuario"
 
 
-
-# Modelo Usuario
 class Usuario(Base):
-    __tablename__ = "user"
+    _tablename_ = "user"
 
     id_user = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(50), nullable=False)
@@ -48,60 +42,20 @@ class Usuario(Base):
     user_progress = relationship("UserModuleProgress",back_populates="user_table")
 
 
-
-# Modelo Tale
 class Tale(Base):
-    __tablename__ = "tale"
+    _tablename_ = "tale"
 
     id_tale = Column(Integer, primary_key=True, autoincrement=True)
     tale_name = Column(String(50), nullable=False)
     content = Column(Text, nullable=False)
     level_type = Column(SQLEnum(level_num), nullable=False)
-    # Relación con Lesson
-    lessons = relationship("Lesson", back_populates="tale", cascade="all, delete-orphan")
-
-# Modelo Lesson
-class Lesson(Base):
-    __tablename__ = "lessons"
-
-    id_lesson = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String(50), nullable=False)
-    id_tale = Column(Integer, ForeignKey("tale.id_tale"))
-
-    # Relaciones
-    tale = relationship("Tale", back_populates="lessons")
-    excercises = relationship("Excercise", back_populates="lesson", cascade="all, delete-orphan")
-
-# Modelo Excercise
-class Excercise(Base):
-    __tablename__ = "excercises"
-
-    id_excercise = Column(Integer, primary_key=True, autoincrement=True)
-    excercise_name = Column(String(100), nullable=False)
-    question = Column(Text, nullable=False)
-    excercise_type = Column(SQLEnum(excercise_type), nullable=False)
-    id_lesson = Column(Integer, ForeignKey("lessons.id_lesson"))
-
-    answers = relationship("Answer",back_populates = "excercises")
-    # Relaciones
-    lesson = relationship("Lesson", back_populates="excercises")
-
-class Answer(Base):
-
-    __tablename__ = "answer"
-
-    id_answer = Column(Integer,primary_key = True, autoincrement=True)
-    answer_text = Column(String(50),nullable = False)
-    is_correct = Column(Boolean,nullable = False)
-    id_excercise = Column(Integer,ForeignKey("excercises.id_excercise"))
-    excercises = relationship("Excercise",back_populates="answers")
     points = Column(Integer , nullable = True)
     excercises = relationship("Excercise", back_populates="tale")
     tale_progress = relationship("UserModuleProgress", back_populates="tale_table")
 
 
 class Excercise(Base):
-    __tablename__ = "excercises"
+    _tablename_ = "excercises"
 
     id_excercise = Column(Integer, primary_key=True, autoincrement=True)
     excercise_name = Column(String(100), nullable=False)
@@ -116,7 +70,7 @@ class Excercise(Base):
 
 
 class Answer(Base):
-    __tablename__ = "answer"
+    _tablename_ = "answer"
 
     id_answer = Column(Integer, primary_key=True, autoincrement=True)
     answer_text = Column(String(50), nullable=False)
@@ -128,7 +82,7 @@ class Answer(Base):
 
 
 class UserSessionHistory(Base):
-    __tablename__ = "user_session_history"
+    _tablename_ = "user_session_history"
 
     id_session = Column(Integer, primary_key=True, autoincrement=True)
     id_user = Column(Integer, ForeignKey("user.id_user", ondelete="CASCADE"), nullable=False)
@@ -140,7 +94,7 @@ class UserSessionHistory(Base):
 
 
 class UserAnswer(Base):
-    __tablename__ = "user_answer"
+    _tablename_ = "user_answer"
 
     id_answer_user = Column(Integer, primary_key=True, index=True, autoincrement=True)
     id_user = Column(Integer, ForeignKey("user.id_user", ondelete="CASCADE"), nullable=False)
@@ -154,7 +108,7 @@ class UserAnswer(Base):
 
 
 class Quiz(Base):
-    __tablename__ = "quiz"
+    _tablename_ = "quiz"
 
     id_quiz = Column(Integer, primary_key=True, autoincrement=True)
     quiz_name = Column(String(30), nullable=False)
@@ -167,7 +121,7 @@ class Quiz(Base):
 
 
 class Answer_Quiz(Base):
-    __tablename__ = "answer_quiz"
+    _tablename_ = "answer_quiz"
 
     id_answer_quiz = Column(Integer, primary_key=True, autoincrement=True)
     answer_text = Column(Text, nullable=False)
@@ -180,7 +134,7 @@ class Answer_Quiz(Base):
 
 
 class UserAnswer_Quiz(Base):
-    __tablename__ = "user_answer_quiz"
+    _tablename_ = "user_answer_quiz"
 
     id_answer_user_quiz = Column(Integer, primary_key=True, index=True, autoincrement=True)
     id_user = Column(Integer, ForeignKey("user.id_user", ondelete="CASCADE"), nullable=False)
@@ -193,12 +147,13 @@ class UserAnswer_Quiz(Base):
 
 
 class UserModuleProgress(Base):
-    __tablename__ = "user_progress"
+    _tablename_ = "user_progress"
 
     id_progress = Column(Integer,primary_key=True,autoincrement=True)
     id_user = Column(Integer, ForeignKey("user.id_user"),nullable=False)
     id_tale = Column(Integer, ForeignKey("tale.id_tale"),nullable=False)
     is_completed = Column(Boolean,default=False)
     completion_date = Column(TIMESTAMP(timezone=True), nullable=True)
+
     user_table = relationship("Usuario",back_populates="user_progress")
     tale_table = relationship("Tale",back_populates="tale_progress")

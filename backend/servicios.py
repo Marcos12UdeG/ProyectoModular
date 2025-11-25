@@ -1,13 +1,5 @@
 import os
 import shutil
-<<<<<<< HEAD
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
-from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel, EmailStr
-from sqlalchemy.orm import Session
-from backend.database import SessionLocal
-from backend.models import Answer, Excercise, Tale, Usuario,level_num,Lesson,excercise_type
-=======
 from typing import List
 from xml.parsers.expat import model
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -19,7 +11,6 @@ from sqlalchemy.orm import Session
 from backend.database import SessionLocal, get_user_data
 from .model_trainer import predict_user_progress
 from backend.models import Answer, Answer_Quiz, Excercise, Quiz, Tale, UserAnswer, UserAnswer_Quiz, UserModuleProgress, UserSessionHistory, Usuario, level_num
->>>>>>> feature
 from googletrans import Translator
 from datetime import datetime, timezone
 from sqlalchemy import func,desc
@@ -71,23 +62,6 @@ class TraducirRead(BaseModel):
     texto: str
     destino: str
 
-<<<<<<< HEAD
-class ExcerciseCreate(BaseModel):
-    excercise_name:str
-    excercise_type:excercise_type
-    id_lesson: int
-    question:str
-
-class ExcerciseRead(BaseModel):
-    id_excercise:int
-    excercise_name:str
-    excercise_type:excercise_type
-    id_lesson: int 
-    question:str
-    model_config = {"from_attributes": True}
-
-=======
->>>>>>> feature
 class AnswerRead(BaseModel):
     id_answer:int
     answer_text:str
@@ -106,8 +80,6 @@ class ExcerciseWithAnswersRead(BaseModel):
     class Config:
         orm_mode = True
 
-<<<<<<< HEAD
-=======
 class SubmitExerciseAnswer(BaseModel):
     id_excercise: int
     id_answer: int
@@ -147,7 +119,6 @@ class Submit_Quiz(BaseModel):
     answers: list[SubmitExcercise]
 
 # ---------------- Router ----------------
->>>>>>> feature
 router = APIRouter()
 translator = Translator()
 
@@ -162,19 +133,11 @@ def get_db():
 
 UPLOAD_DIR = "frontend/proyecto-modular/public/images"
 
-<<<<<<< HEAD
-
-UPLOAD_DIR = "frontend/proyecto-modular/public/images"
-
-@router.get("/usuario",response_model=list[UsuarioRead])
-def ObtenerUsuario(db: Session = Depends(get_db)):
-=======
 # ---------------- Endpoints ----------------
 
 # Usuarios
 @router.get("/usuario", response_model=list[UsuarioRead])
 def obtener_usuario(db: Session = Depends(get_db)):
->>>>>>> feature
     return db.query(Usuario).all()
 
 @router.get("/user/{id_user}/level")
@@ -223,37 +186,9 @@ def crear_cuento(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
-<<<<<<< HEAD
-    # Guardar imagen en /public/images/nombre_del_cuento.jpg
-    filename = tale_name.replace(" ", "_").lower() + ".jpg"
-    file_path = os.path.join(UPLOAD_DIR, filename)
-
-    # Crear carpeta si no existe
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # Guardar en base de datos
-    new_tale = Tale(
-        tale_name=tale_name,
-        content=content,
-        level_type=level_type
-    )
-    db.add(new_tale)
-    db.commit()
-    db.refresh(new_tale)
-
-    return new_tale
-
-@router.get("/lesson",response_model=list[LessonRead])
-def ObtenerLecciones(db: Session = Depends(get_db)):
-    return db.query(Lesson).all()
-=======
 
     filename = tale_name.replace(" ", "_").lower() + ".jpg"
     file_path = os.path.join(UPLOAD_DIR, filename)
->>>>>>> feature
 
 
     os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -319,49 +254,15 @@ def traducir(request: TraducirRead):
     traduccion = translator.translate(request.texto, dest=request.destino)
     return {"texto_original": request.texto, "traduccion": traduccion.text}
 
-<<<<<<< HEAD
-=======
 # ------------------------------------------------------------------------------------------
 
 # Paginación de lecciones por cuento
->>>>>>> feature
 @router.get("/tales/{tale_id}/lessons", response_model=list[LessonRead])
 def get_lessons_by_tale(tale_id: int, db: Session = Depends(get_db)):
     tale = db.query(Tale).filter(Tale.id_tale == tale_id).first()
     if not tale:
         raise HTTPException(status_code=404, detail="Cuento no encontrado")
     return jsonable_encoder(tale.lessons)
-<<<<<<< HEAD
-
-@router.get("/lessons/{id_lesson}/excercises", response_model=list[ExcerciseRead])
-def get_excercise_by_lesson(id_lesson: int, db: Session = Depends(get_db)):
-    lesson = db.query(Lesson).filter(Lesson.id_lesson == id_lesson).first()
-    if not lesson:
-        raise HTTPException(status_code=404, detail="Leccion no encontrada")
-    return jsonable_encoder(lesson.excercises)
-
-@router.get("/lessons/{lesson_id}/exercises_with_answers", response_model=list[ExcerciseWithAnswersRead])
-def obtener_ejercicios_con_respuestas(lesson_id: int, db: Session = Depends(get_db)):
-    """
-    Devuelve todos los ejercicios de una lección junto con sus respuestas.
-    """
-    ejercicios = db.query(Excercise).filter(Excercise.id_lesson == lesson_id).all()
-    if not ejercicios:
-        raise HTTPException(status_code=404, detail="No se encontraron ejercicios para esta lección")
-
-    ejercicios_con_respuestas = []
-    for ex in ejercicios:
-        respuestas = db.query(Answer).filter(Answer.id_excercise == ex.id_excercise).all()
-        ejercicios_con_respuestas.append({
-            "id_excercise": ex.id_excercise,
-            "excercise_name": ex.excercise_name,
-            "question": ex.question,
-            "excercise_type": ex.excercise_type,
-            "answers": respuestas
-        })
-
-    return ejercicios_con_respuestas
-=======
 
 # ------------------------------------------------------------------------------------------
 
@@ -678,7 +579,6 @@ def ObtenerPuntuaje(id_user:int, db: Session = Depends(get_db)):
     return {
         "total_puntos": total_puntos
     }
->>>>>>> feature
 
 
 @router.get("/ranking")
